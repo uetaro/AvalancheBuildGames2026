@@ -1,0 +1,59 @@
+{
+  "event_message": "OPTIONS | 204 | https://afyppqxnwbinjaoqikbw.supabase.co/functions/v1/make-server-c253248c/company-search?q=Heartel",
+  "id": "06067dc5-3bcc-4c9d-a3e9-b35514064e28",
+  "metadata": [
+    {
+      "deployment_id": "afyppqxnwbinjaoqikbw_a021b340-4402-4588-8cb3-d7d1f36cf669_6",
+      "execution_id": "aae042b7-0cb6-44f5-aacf-bfa99991773b",
+      "execution_time_ms": 279,
+      "function_id": "a021b340-4402-4588-8cb3-d7d1f36cf669",
+      "project_ref": "afyppqxnwbinjaoqikbw",
+      "request": [
+        {
+          "headers": [
+            {
+              "accept": "*/*",
+              "accept_encoding": "gzip, br",
+              "connection": "Keep-Alive",
+              "content_length": null,
+              "cookie": null,
+              "host": "afyppqxnwbinjaoqikbw.supabase.co",
+              "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Figma/126.1.2 Chrome/142.0.7444.265 Electron/39.4.0 Safari/537.36",
+              "x_client_info": null
+            }
+          ],
+          "host": "afyppqxnwbinjaoqikbw.supabase.co",
+          "method": "OPTIONS",
+          "pathname": "/functions/v1/make-server-c253248c/company-search",
+          "port": null,
+          "protocol": "https:",
+          "sb": [],
+          "search": "?q=Heartel",
+          "url": "https://afyppqxnwbinjaoqikbw.supabase.co/functions/v1/make-server-c253248c/company-search?q=Heartel"
+        }
+      ],
+      "response": [
+        {
+          "headers": [
+            {
+              "content_length": null,
+              "content_type": null,
+              "date": "Sun, 01 Mar 2026 04:14:04 GMT",
+              "sb_request_id": "019ca79a-776a-747c-abf9-ec906288a427",
+              "server": "cloudflare",
+              "vary": "Accept-Encoding, Access-Control-Request-Headers",
+              "x_envoy_upstream_service_time": null,
+              "x_sb_compute_multiplier": null,
+              "x_sb_edge_region": "ap-northeast-1",
+              "x_sb_resource_multiplier": null,
+              "x_served_by": "supabase-edge-runtime"
+            }
+          ],
+          "status_code": 204
+        }
+      ],
+      "version": "6"
+    }
+  ],
+  "timestamp": 1772338444417000
+}
