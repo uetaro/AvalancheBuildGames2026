@@ -25,6 +25,9 @@ import entry from "./routes_entry.ts";
 import kudosGuest from "./routes_kudos_guest.ts";
 import staffList from "./routes_staff_list.ts";
 
+// On-chain Worker — pg_cron から呼ばれるブロックチェーン非同期処理
+import chainWorker from "./routes_chain_worker.ts";
+
 // ── App setup ────────────────────────────────────────────────────────────────
 const app = new Hono();
 
@@ -73,6 +76,12 @@ guestApp.route("/", kudosGuest); // POST /public-kudos-send
 guestApp.route("/", staffList);  // GET /public-staff-list
 
 app.route("/api/make-server-14a1e5b0", guestApp);
+
+// ── On-chain Worker routes ─────────────────────────────────────────────────
+// POST /api/chain-worker-submit  — queued レシートを Avalanche に送信
+// POST /api/chain-worker-confirm — submitted Tx の完了を確認
+// 認証: Authorization: Bearer <SUPABASE_SERVICE_ROLE_KEY>（pg_cron が付与）
+app.route("/api", chainWorker);
 
 // ── Serve ─────────────────────────────────────────────────────────────────────
 Deno.serve(app.fetch);

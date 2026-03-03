@@ -1,6 +1,8 @@
 // Stay lifecycle routes: ops-checkin, ops-checkout
 import { Hono } from "npm:hono";
 import { authAndAuthorize, createServiceClient, ROUTE_PREFIX } from "./_shared.ts";
+// Blockchain: chain_receipt は Kudos 送信時点（routes_kudos_guest.ts）で作成済み。
+// checkout では kudos の confirm/reject のみ行い、chain_receipt は触らない。
 
 const stays = new Hono();
 
@@ -330,40 +332,10 @@ stays.post(`${ROUTE_PREFIX}/ops-checkout`, async (c) => {
     }
     confirmedCount = confirmedRows?.length || 0;
 
-    // 8) Create chain_receipt for confirmed kudos
-    // TODO: Blockchain — MVP queues receipts; actual on-chain anchoring is deferred.
-    // When blockchain integration is implemented:
-    //   - Compute anchor_hash = sha256(kudos_id:company_id:stay_id:receiver:category:points:created_at)
-    //   - A background job will pick up queued receipts and write to chain (e.g. Avalanche C-Chain)
-    //   - After tx confirmation, update receipt_status='confirmed' with tx_hash
-    if (confirmedRows && confirmedRows.length > 0) {
-      const receipts = confirmedRows.map((k: any) => ({
-        kudos_id: k.kudos_id,
-        chain_name: "Avalanche C-Chain",
-        anchor_hash: `TODO_sha256_${k.kudos_id}`, // TODO: Blockchain — compute real sha256 hash
-        tx_hash: null,
-        points_awarded: k.points_awarded || 0,
-        receipt_status: "queued",
-        submitted_at: null,
-        confirmed_at: null,
-        fail_reason: null,
-        version: 1,
-        created_at: now,
-        updated_at: now,
-      }));
-
-      const { data: insertedReceipts, error: receiptErr } = await supabaseSvc
-        .from("chain_receipt")
-        .upsert(receipts, { onConflict: "kudos_id", ignoreDuplicates: true })
-        .select("chain_receipt_id");
-
-      if (receiptErr) {
-        // Non-fatal: chain_receipt table may not exist in MVP seed
-        console.log("[ops-checkout] chain_receipt insert warning (non-fatal):", receiptErr.message);
-      } else {
-        queuedReceiptCount = insertedReceipts?.length || 0;
-      }
-    }
+    // 8) chain_receipt は Kudos 送信時点（/public-kudos-send）で既に queued 作成済み。
+    // checkout では kudos_status の確定のみ行う。chain_receipt は Worker が非同期で処理する。
+    // queued_receipt_count は参考値として confirmed 数をそのまま流用。
+    queuedReceiptCount = confirmedCount;
 
     // 9) Audit log
     const { error: auditErr } = await supabaseSvc

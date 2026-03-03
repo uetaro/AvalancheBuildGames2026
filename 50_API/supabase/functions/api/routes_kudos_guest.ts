@@ -3,9 +3,57 @@
 // since the RPC restricts member_role to 'employee' only but the
 // staff list shows employee/staff/manager.
 import { Hono } from "npm:hono";
+import { ethers } from "npm:ethers@6";
 import { errorResponse, validateGuestSession, createServiceClient } from "./_shared.ts";
 
 const ALLOWED_ROLES = ["employee", "staff", "manager"];
+
+// ── Blockchain: anchor_hash 生成（Option B — 送信時点でオンチェーン記録）──────
+// 設計書 DD-OPS-CHECKOUT-ONCHAIN §5.2 準拠
+// V2: message_text のハッシュを追加し、メッセージ改ざんも検知可能にした
+const CHAIN_ID = 43113; // Fuji Testnet（本番は 43114）
+const SCHEMA_ID = ethers.keccak256(ethers.toUtf8Bytes("HEARTEL_RECEIPT_V2"));
+
+/**
+ * anchor_hash = keccak256(abi.encode(
+ *   SCHEMA_ID, kudos_uuid(bytes16), stay_uuid(bytes16),
+ *   company_uuid(bytes16), receiver_uuid(bytes16),
+ *   category_hash(bytes32), message_hash(bytes32), points(uint32), issued_at_sec(uint64)
+ * ))
+ * DB の値から確定的に計算される。チェックアウト後に再計算しても一致する。
+ * V2 追加: message_hash = keccak256(message_text) により本文の改ざんも検知可能。
+ */
+function computeAnchorHash(k: {
+  kudos_id: string;
+  stay_id: string;
+  company_id: string;
+  receiver_company_member_id: string;
+  category: string;
+  message_text: string;
+  points_awarded: number;
+  created_at: string;
+}): string {
+  const categoryHash = ethers.keccak256(ethers.toUtf8Bytes(k.category ?? ""));
+  const messageHash = ethers.keccak256(ethers.toUtf8Bytes(k.message_text ?? ""));
+  const issuedAtSec = BigInt(Math.floor(new Date(k.created_at).getTime() / 1000));
+
+  const encoded = ethers.AbiCoder.defaultAbiCoder().encode(
+    ["bytes32", "bytes16", "bytes16", "bytes16", "bytes16", "bytes32", "bytes32", "uint32", "uint64"],
+    [
+      SCHEMA_ID,
+      "0x" + k.kudos_id.replace(/-/g, ""),
+      "0x" + k.stay_id.replace(/-/g, ""),
+      "0x" + k.company_id.replace(/-/g, ""),
+      "0x" + k.receiver_company_member_id.replace(/-/g, ""),
+      categoryHash,
+      messageHash,
+      k.points_awarded,
+      issuedAtSec,
+    ],
+  );
+
+  return ethers.keccak256(encoded);
+}
 
 const kudos = new Hono();
 
@@ -206,7 +254,7 @@ kudos.post("/public-kudos-send", async (c) => {
         guest_session_id,
         version: 1,
       })
-      .select("kudos_id, kudos_status")
+      .select("kudos_id, kudos_status, created_at")
       .single();
 
     if (insertErr) {
@@ -219,7 +267,57 @@ kudos.post("/public-kudos-send", async (c) => {
       );
     }
 
-    // ── 11) Insert moderation record ───────────────────────────────
+    // ── 11) オンチェーン記録キュー投入（Option B — 送信時点） ──────────
+    // anchor_hash を今この時点の DB 値から確定的に計算し、chain_receipt を queued で作成。
+    // Worker（chain-worker-submit）が ~1 分以内に Avalanche C-Chain に送信する。
+    // kudos_status（pending/confirmed/rejected）はチェックアウト時に DB 側で確定するが、
+    // チェーン上の記録（存在証明）はここで永久にロックされる。
+    try {
+      const anchorHash = computeAnchorHash({
+        kudos_id: newKudos.kudos_id,
+        stay_id,
+        company_id,
+        receiver_company_member_id,
+        category: category.trim(),
+        message_text: message_text.trim(),
+        points_awarded: pointsAward,
+        created_at: newKudos.created_at,
+      });
+
+      const receiptNow = new Date().toISOString();
+      const { error: receiptErr } = await db.from("chain_receipt").insert({
+        kudos_id: newKudos.kudos_id,
+        chain_name: "Avalanche C-Chain",
+        anchor_hash: anchorHash,
+        tx_hash: null,
+        points_awarded: pointsAward,
+        receipt_status: "queued",
+        chain_id: CHAIN_ID,
+        contract_address: Deno.env.get("RECEIPT_REGISTRY_ADDRESS") ?? "",
+        hash_alg: "keccak256",
+        retry_count: 0,
+        next_attempt_at: null,
+        last_attempt_at: null,
+        tx_error: null,
+        submitted_at: null,
+        confirmed_at: null,
+        fail_reason: null,
+        version: 1,
+        created_at: receiptNow,
+        updated_at: receiptNow,
+      });
+
+      if (receiptErr) {
+        // Non-fatal: Kudos 自体は成功させる。Worker のリトライで回収可能。
+        console.error("[public-kudos-send] chain_receipt insert warning:", receiptErr.message);
+      } else {
+        console.log(`[public-kudos-send] chain_receipt queued: kudos_id=${newKudos.kudos_id} anchor=${anchorHash.slice(0, 10)}...`);
+      }
+    } catch (hashErr) {
+      console.error("[public-kudos-send] anchor_hash computation error (non-fatal):", hashErr);
+    }
+
+    // ── 13) Insert moderation record ───────────────────────────────
     const { error: modErr } = await db
       .from("kudos_moderation")
       .insert({
@@ -238,7 +336,7 @@ kudos.post("/public-kudos-send", async (c) => {
       console.error("Error inserting kudos_moderation (non-fatal):", modErr);
     }
 
-    // ── 12) Compute remaining quota ────────────────────────────────
+    // ── 14) Compute remaining quota ────────────────────────────────
     const remainingQuota = Math.max(0, quota - (used + 1));
 
     console.log(
