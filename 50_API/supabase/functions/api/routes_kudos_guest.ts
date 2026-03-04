@@ -5,6 +5,7 @@
 import { Hono } from "npm:hono";
 import { ethers } from "npm:ethers@6";
 import { errorResponse, validateGuestSession, createServiceClient } from "./_shared.ts";
+import { scoreKudosContent } from "./moderation.ts";
 
 const ALLOWED_ROLES = ["employee", "staff", "manager"];
 
@@ -230,14 +231,46 @@ kudos.post("/public-kudos-send", async (c) => {
       }
     }
 
-    // ── 9) Minimal moderation (MVP rule-based) ─────────────────────
+    // ── 9) AI コンテンツスコアリング（オンチェーン記録前にチェック）────────────
+    // ネガティブ表現・誹謗中傷・無意味な文字列等を検出。閾値未満なら投稿を中断。
+    const contentThreshold = (rules as any).content_score_threshold ?? 90;
+    const moderationResult = await scoreKudosContent(message_text.trim(), contentThreshold);
+
+    if (!moderationResult.passed) {
+      console.log("[public-kudos-send] moderation REJECTED", {
+        stay_id,
+        score: moderationResult.score,
+        threshold: contentThreshold,
+        reason: moderationResult.reason,
+        flags: moderationResult.flags,
+        message_preview: message_text.trim().slice(0, 30) + (message_text.length > 30 ? "..." : ""),
+      });
+      return c.json(
+        errorResponse("CONTENT_MODERATION_FAILED", "メッセージの内容が投稿基準を満たしていません。内容を修正して再度お試しください。", {
+          score: moderationResult.score,
+          threshold: contentThreshold,
+          reason: moderationResult.reason,
+          flags: moderationResult.flags,
+        }),
+        400
+      );
+    }
+
+    console.log("[public-kudos-send] moderation PASSED", {
+      stay_id,
+      score: moderationResult.score,
+      threshold: contentThreshold,
+      model: moderationResult.model,
+    });
+
+    // ── 10) Minimal moderation (MVP rule-based) ─────────────────────
     let moderationDecision = "allow";
     const lowerMsg = message_text.toLowerCase();
     if (lowerMsg.includes("http://") || lowerMsg.includes("https://")) {
       moderationDecision = "review";
     }
 
-    // ── 10) Insert kudos ───────────────────────────────────────────
+    // ── 11) Insert kudos ───────────────────────────────────────────
     const kudosStatus = moderationDecision === "block" ? "rejected" : "pending";
 
     const { data: newKudos, error: insertErr } = await db
@@ -267,7 +300,7 @@ kudos.post("/public-kudos-send", async (c) => {
       );
     }
 
-    // ── 11) オンチェーン記録キュー投入（Option B — 送信時点） ──────────
+    // ── 12) オンチェーン記録キュー投入（Option B — 送信時点） ──────────
     // anchor_hash を今この時点の DB 値から確定的に計算し、chain_receipt を queued で作成。
     // Worker（chain-worker-submit）が ~1 分以内に Avalanche C-Chain に送信する。
     // kudos_status（pending/confirmed/rejected）はチェックアウト時に DB 側で確定するが、
@@ -317,15 +350,15 @@ kudos.post("/public-kudos-send", async (c) => {
       console.error("[public-kudos-send] anchor_hash computation error (non-fatal):", hashErr);
     }
 
-    // ── 13) Insert moderation record ───────────────────────────────
+    // ── 13) Insert moderation record (AI score + rule-based) ──────────
     const { error: modErr } = await db
       .from("kudos_moderation")
       .insert({
         kudos_id: newKudos.kudos_id,
         moderation_decision: moderationDecision,
-        reason_codes: null,
-        score_json: null,
-        model_name: "mvp-rule",
+        reason_codes: moderationResult.flags?.length ? moderationResult.flags : null,
+        score_json: { ai_score: moderationResult.score, threshold: contentThreshold },
+        model_name: moderationResult.model ?? "mvp-rule",
         reviewed_by_user_id: null,
         reviewed_at: null,
         version: 1,
@@ -336,7 +369,7 @@ kudos.post("/public-kudos-send", async (c) => {
       console.error("Error inserting kudos_moderation (non-fatal):", modErr);
     }
 
-    // ── 14) Compute remaining quota ────────────────────────────────
+    // ── 14) Compute remaining quota ─────────────────────────────────
     const remainingQuota = Math.max(0, quota - (used + 1));
 
     console.log(
