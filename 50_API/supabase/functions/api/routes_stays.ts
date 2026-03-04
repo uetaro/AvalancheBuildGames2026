@@ -126,9 +126,10 @@ stays.post(`${ROUTE_PREFIX}/ops-checkin`, async (c) => {
     // 8) Build rules_snapshot (MVP fixed values)
     const rulesSnapshot = {
       kudos_quota: 3,
-      cooldown_sec: 600,
+      cooldown_sec: 0, // 0=クールダウンなし（UI側で制御する場合は有効化）
       post_checkout_window_sec: 3600,
       points_award: 100,
+      content_score_threshold: 90, // AI モデレーション: 100点中この値以上で投稿可
     };
 
     const checkinTime = checkin_at || new Date().toISOString();
