@@ -19,13 +19,14 @@ import work from "./routes_work.ts";
 import affiliationReq from "./routes_affiliation_req.ts";
 import kudosStaff from "./routes_kudos_staff.ts";
 import profileRoutes from "./routes_profile.ts";
+import careerChat from "./routes_career_chat.ts";
 
 // Guest (guest_mobile) — guest-facing
 import entry from "./routes_entry.ts";
 import kudosGuest from "./routes_kudos_guest.ts";
 import staffList from "./routes_staff_list.ts";
 
-// On-chain Worker — pg_cron から呼ばれるブロックチェーン非同期処理
+// On-chain Worker — blockchain async processing invoked by pg_cron
 import chainWorker from "./routes_chain_worker.ts";
 
 // ── App setup ────────────────────────────────────────────────────────────────
@@ -46,9 +47,8 @@ app.use(
 // ── Health check ─────────────────────────────────────────────────────────────
 app.get("/api/health", (c) => c.json({ status: "ok" }));
 
-// ── Ops routes — staff_web 由来 ──────────────────────────────────────────────
-// Supabase は関数名 "api" をパスに含めるため /api/* でマウントする
-// 各ルートファイルは内部で /make-server-20781d19/... を定義している
+// ── Ops routes (from staff_web) ─────────────────────────────────────────────
+// Supabase mounts at /api/*; each route file defines /make-server-20781d19/...
 const opsApp = new Hono();
 opsApp.route("/", stays);           // POST /make-server-20781d19/ops-checkin, ops-checkout
 opsApp.route("/", rooms);           // POST /make-server-20781d19/ops-rooms
@@ -60,16 +60,17 @@ opsApp.route("/", seed);            // POST /make-server-20781d19/seed
 
 app.route("/api", opsApp);
 
-// ── Staff routes — staff_mobile 由来 ─────────────────────────────────────────
+// ── Staff routes (from staff_mobile) ────────────────────────────────────────
 const staffApp = new Hono();
 staffApp.route("/", work);           // POST /work-tap, GET /work-tags, GET /work-status
 staffApp.route("/", affiliationReq); // GET /company-search, POST /affiliation-request, etc.
 staffApp.route("/", kudosStaff);     // GET /my-kudos, GET /my-kudos/:id
 staffApp.route("/", profileRoutes);  // GET/PUT /my-profile, POST/DELETE /my-profile/avatar
+staffApp.route("/", careerChat);     // POST /career-chat — AI career consultation
 
 app.route("/api/make-server-c253248c", staffApp);
 
-// ── Guest routes — guest_mobile 由来 ─────────────────────────────────────────
+// ── Guest routes (from guest_mobile) ────────────────────────────────────────
 const guestApp = new Hono();
 guestApp.route("/", entry);      // POST /public-entry-verify
 guestApp.route("/", kudosGuest); // POST /public-kudos-send
@@ -78,9 +79,9 @@ guestApp.route("/", staffList);  // GET /public-staff-list
 app.route("/api/make-server-14a1e5b0", guestApp);
 
 // ── On-chain Worker routes ─────────────────────────────────────────────────
-// POST /api/chain-worker-submit  — queued レシートを Avalanche に送信
-// POST /api/chain-worker-confirm — submitted Tx の完了を確認
-// 認証: Authorization: Bearer <SUPABASE_SERVICE_ROLE_KEY>（pg_cron が付与）
+// POST /api/chain-worker-submit  — send queued receipts to Avalanche
+// POST /api/chain-worker-confirm — confirm submitted Tx completion
+// Auth: Authorization: Bearer <SUPABASE_SERVICE_ROLE_KEY> (set by pg_cron)
 app.route("/api", chainWorker);
 
 // ── Serve ─────────────────────────────────────────────────────────────────────

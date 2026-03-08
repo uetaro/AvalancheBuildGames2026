@@ -2,6 +2,38 @@
 import { Hono } from "npm:hono";
 import { errorResponse, validateGuestSession, createServiceClient } from "./_shared.ts";
 
+const AVATAR_BUCKET = "make-c253248c-avatars";
+
+async function fetchAvatarUrls(
+  supabase: ReturnType<typeof createServiceClient>,
+  userIds: string[]
+): Promise<Map<string, string>> {
+  const avatarMap = new Map<string, string>();
+  if (userIds.length === 0) return avatarMap;
+
+  const results = await Promise.allSettled(
+    userIds.map(async (userId) => {
+      const { data: files } = await supabase.storage
+        .from(AVATAR_BUCKET)
+        .list(userId, { limit: 1, search: "avatar" });
+      if (!files || files.length === 0) return null;
+      const file = files.find((f: any) => f.name.startsWith("avatar"));
+      if (!file) return null;
+      const { data: signed } = await supabase.storage
+        .from(AVATAR_BUCKET)
+        .createSignedUrl(`${userId}/${file.name}`, 3600);
+      return signed?.signedUrl ? { userId, url: signed.signedUrl } : null;
+    })
+  );
+
+  for (const r of results) {
+    if (r.status === "fulfilled" && r.value) {
+      avatarMap.set(r.value.userId, r.value.url);
+    }
+  }
+  return avatarMap;
+}
+
 const staff = new Hono();
 
 // GET /public-staff-list
@@ -111,6 +143,9 @@ staff.get("/public-staff-list", async (c) => {
       }
     }
 
+    // 5b) Fetch avatar signed URLs from Storage in parallel
+    const avatarMap = await fetchAvatarUrls(db, userIds);
+
     // 6) Build session lookup for on_duty_started_at
     const sessionMap = new Map(
       pageItems.map((s) => [s.company_member_id, s.started_at])
@@ -135,7 +170,9 @@ staff.get("/public-staff-list", async (c) => {
           "(No Name)",
         job_title: m.job_title ?? null,
         profile_image_url:
-          (m.public_profile_json as any)?.profile_image_url ?? null,
+          avatarMap.get(m.user_id) ??
+          (m.public_profile_json as any)?.profile_image_url ??
+          null,
         on_duty_started_at: sessionMap.get(m.company_member_id) ?? null,
       }))
       // Sort by on_duty_started_at desc (most recent first)

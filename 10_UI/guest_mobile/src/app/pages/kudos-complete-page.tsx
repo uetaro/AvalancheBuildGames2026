@@ -1,13 +1,14 @@
 import { useNavigate, useLocation } from "react-router";
+import { useEffect } from "react";
 import { CheckCircle, ChevronRight } from "lucide-react";
 import { motion } from "motion/react";
-import kudosIcon from "figma:asset/f4bf621b3ae64967e30c73582c7e028cfa4590e9.png";
+import kudosIcon from "figma:asset/kudos.png";
 
 const pageTransition = {
   initial: { opacity: 0, scale: 0.95 },
   animate: { opacity: 1, scale: 1 },
   exit: { opacity: 0, scale: 0.95 },
-  transition: { duration: 0.3, ease: "easeInOut" }
+  transition: { duration: 0.3, ease: "easeInOut" as const }
 };
 
 export function KudosCompletePage() {
@@ -28,6 +29,12 @@ export function KudosCompletePage() {
   const remainingQuota = kudosResult?.remaining_quota ?? null;
   const staffName = kudosResult?.staff_display_name ?? null;
   const kudosStatus = kudosResult?.kudos_status ?? "pending";
+
+  useEffect(() => {
+    if (remainingQuota !== null) {
+      localStorage.setItem("remaining_quota", String(remainingQuota));
+    }
+  }, [remainingQuota]);
 
   return (
     <motion.div 
@@ -92,7 +99,7 @@ export function KudosCompletePage() {
                   Kudos Remaining
                 </p>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-4xl text-accent font-light">{remainingQuota}</span>
+                  <span className="text-4xl text-kudos font-light">{remainingQuota}</span>
                 </div>
               </div>
             </div>
@@ -101,13 +108,13 @@ export function KudosCompletePage() {
 
         {/* Pending Notice */}
         <motion.div
-          className="bg-accent/5 border border-accent/20 rounded-none p-4 mb-5"
+          className="bg-kudos/5 border border-kudos/20 rounded-none p-4 mb-5"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.35 }}
         >
           <p className="text-xs text-muted-foreground font-light leading-relaxed">
-            Your Kudos is currently <span className="text-accent font-medium">{kudosStatus}</span> and will be confirmed at checkout.
+            Your Kudos is currently <span className="text-kudos font-medium">{kudosStatus}</span> and will be confirmed at checkout.
           </p>
         </motion.div>
 
@@ -121,7 +128,7 @@ export function KudosCompletePage() {
           {remainingQuota !== null && remainingQuota > 0 && (
             <button
               onClick={() => navigate("/staff")}
-              className="w-full bg-accent text-accent-foreground py-4 px-6 rounded-none hover:shadow-lg transition-all group font-light"
+              className="w-full bg-kudos text-kudos-foreground py-4 px-6 rounded-none hover:shadow-lg transition-all group font-light"
             >
               <div className="flex items-center justify-between">
                 <span>Send Another Kudos</span>

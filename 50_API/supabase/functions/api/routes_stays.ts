@@ -1,8 +1,7 @@
 // Stay lifecycle routes: ops-checkin, ops-checkout
 import { Hono } from "npm:hono";
 import { authAndAuthorize, createServiceClient, ROUTE_PREFIX } from "./_shared.ts";
-// Blockchain: chain_receipt は Kudos 送信時点（routes_kudos_guest.ts）で作成済み。
-// checkout では kudos の confirm/reject のみ行い、chain_receipt は触らない。
+// Blockchain: chain_receipt is created at Kudos send time (routes_kudos_guest.ts). Checkout only confirms/rejects kudos; does not touch chain_receipt.
 
 const stays = new Hono();
 
@@ -126,10 +125,10 @@ stays.post(`${ROUTE_PREFIX}/ops-checkin`, async (c) => {
     // 8) Build rules_snapshot (MVP fixed values)
     const rulesSnapshot = {
       kudos_quota: 3,
-      cooldown_sec: 0, // 0=クールダウンなし（UI側で制御する場合は有効化）
+      cooldown_sec: 0, // 0=no cooldown (enable if UI controls it)
       post_checkout_window_sec: 3600,
       points_award: 100,
-      content_score_threshold: 90, // AI モデレーション: 100点中この値以上で投稿可
+      content_score_threshold: 90, // AI moderation: post allowed if score >= this (out of 100)
     };
 
     const checkinTime = checkin_at || new Date().toISOString();
@@ -333,9 +332,7 @@ stays.post(`${ROUTE_PREFIX}/ops-checkout`, async (c) => {
     }
     confirmedCount = confirmedRows?.length || 0;
 
-    // 8) chain_receipt は Kudos 送信時点（/public-kudos-send）で既に queued 作成済み。
-    // checkout では kudos_status の確定のみ行う。chain_receipt は Worker が非同期で処理する。
-    // queued_receipt_count は参考値として confirmed 数をそのまま流用。
+    // 8) chain_receipt is already created as queued at Kudos send (/public-kudos-send). Checkout only finalizes kudos_status; Worker processes chain_receipt async. queued_receipt_count reuses confirmed count for reference.
     queuedReceiptCount = confirmedCount;
 
     // 9) Audit log

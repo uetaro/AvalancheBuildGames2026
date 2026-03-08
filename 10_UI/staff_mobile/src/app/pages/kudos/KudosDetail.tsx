@@ -1,10 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ArrowLeft, Loader2, CheckCircle, Clock, XCircle, AlertCircle, Copy, Shield, ShieldCheck, ShieldAlert } from 'lucide-react';
+import { ArrowLeft, Loader2, CheckCircle, Clock, XCircle, AlertCircle, Copy, Shield, ShieldCheck, ShieldAlert, ExternalLink, RefreshCw, ChevronDown, ChevronUp } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { supabase, serverUrl, authHeaders } from '../../lib/supabase';
-import pointIcon from 'figma:asset/5560785a34694df91ca800dfb17c52f6abbe5399.png';
-import kudosIcon from 'figma:asset/d13c169a55630b616ca2bbf29b05b5269d82cbb9.png';
+import pointIcon from 'figma:asset/coin.png';
+import kudosIcon from 'figma:asset/kudos.png';
+
+const FUJI_EXPLORER = 'https://testnet.snowtrace.io';
+const CHAIN_ID = 43113;
 
 const CATEGORY_CONFIG: Record<string, { color: string; gradient: string }> = {
   'Service': { color: '#FF6B6B', gradient: 'linear-gradient(135deg, #FF6B6B 0%, #FF8E8E 50%, #FFB4B4 100%)' },
@@ -66,6 +69,38 @@ export default function KudosDetail() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [verifyResult, setVerifyResult] = useState<'verified' | 'not_found' | 'error' | null>(null);
+  const [showHashDetails, setShowHashDetails] = useState(false);
+
+  const verifyOnChain = useCallback(async () => {
+    if (!kudos?.proof?.tx_hash) return;
+    setIsVerifying(true);
+    setVerifyResult(null);
+    try {
+      const res = await fetch(`https://api.avax-test.network/ext/bc/C/rpc`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jsonrpc: '2.0', id: 1,
+          method: 'eth_getTransactionReceipt',
+          params: [kudos.proof.tx_hash],
+        }),
+      });
+      const data = await res.json();
+      if (data.result && data.result.status === '0x1') {
+        setVerifyResult('verified');
+      } else if (data.result) {
+        setVerifyResult('not_found');
+      } else {
+        setVerifyResult('not_found');
+      }
+    } catch {
+      setVerifyResult('error');
+    } finally {
+      setIsVerifying(false);
+    }
+  }, [kudos?.proof?.tx_hash]);
 
   const fetchDetail = useCallback(async () => {
     if (!id) return;
@@ -163,11 +198,21 @@ export default function KudosDetail() {
             <ArrowLeft size={20} style={{ color: '#fff' }} />
           </button>
           <div
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full"
-            style={{ backgroundColor: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(10px)' }}
+            className="flex items-center gap-2 px-4 py-2 rounded-full"
+            style={{ 
+              backgroundColor: kudos.kudos_status === 'confirmed' ? 'rgba(91, 165, 165, 0.9)' : 
+                             kudos.kudos_status === 'rejected' ? 'rgba(255, 107, 107, 0.9)' : 
+                             'rgba(201, 162, 39, 0.9)',
+              backdropFilter: 'blur(10px)',
+              border: '1px solid rgba(255,255,255,0.3)'
+            }}
           >
-            <StatusIcon size={13} style={{ color: '#fff' }} />
-            <span style={{ fontSize: '12px', fontWeight: 600, color: '#fff' }}>{statusCfg.label}</span>
+            <StatusIcon size={14} style={{ color: '#fff' }} />
+            <span style={{ fontSize: '13px', fontWeight: 700, color: '#fff' }}>
+              {kudos.kudos_status === 'confirmed' ? 'Approved' : 
+               kudos.kudos_status === 'rejected' ? 'Declined' : 
+               'Under Review'}
+            </span>
           </div>
         </div>
 
@@ -256,16 +301,6 @@ export default function KudosDetail() {
                 {formatDate(kudos.created_at)}
               </div>
             </div>
-            {kudos.confirmed_at && (
-              <div>
-                <div style={{ fontSize: '10px', color: '#9CA3AF', fontWeight: 600, letterSpacing: '0.6px', textTransform: 'uppercase', marginBottom: '3px' }}>
-                  Confirmed
-                </div>
-                <div style={{ fontSize: '13px', fontWeight: 500, color: '#5BA5A5' }}>
-                  {formatDate(kudos.confirmed_at)}
-                </div>
-              </div>
-            )}
             {kudos.company_name && (
               <div>
                 <div style={{ fontSize: '10px', color: '#9CA3AF', fontWeight: 600, letterSpacing: '0.6px', textTransform: 'uppercase', marginBottom: '3px' }}>
@@ -302,84 +337,153 @@ export default function KudosDetail() {
               )}
               <div>
                 <h3 style={{ fontSize: '13px', fontWeight: 600, color: '#081A33' }}>
-                  {proofStatus === 'confirmed' ? 'Verified on Chain' :
+                  {proofStatus === 'confirmed' ? 'Blockchain Verified' :
                    proofStatus === 'failed' ? 'Verification Failed' :
-                   'Verification Pending'}
+                   'Blockchain Pending'}
                 </h3>
+                <p style={{ fontSize: '11px', color: '#9CA3AF', marginTop: '1px' }}>
+                  {proofStatus === 'confirmed' ? 'This Kudos is permanently recorded on Avalanche blockchain' :
+                   proofStatus === 'failed' ? 'Unable to record on blockchain - please contact support' :
+                   'Recording to blockchain in progress'}
+                </p>
               </div>
-              <div className="ml-auto">
-                <span
-                  className="px-2.5 py-1 rounded-lg inline-flex items-center gap-1"
+            </div>
+
+            {/* Verify on Chain + Explorer link */}
+            {kudos.proof.tx_hash && (
+              <div className="space-y-2.5 mb-4">
+                <button
+                  onClick={verifyOnChain}
+                  disabled={isVerifying}
+                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl active:scale-[0.98] transition-all"
                   style={{
-                    fontSize: '11px',
-                    fontWeight: 600,
-                    color: proofStatus === 'confirmed' ? '#5BA5A5' : proofStatus === 'failed' ? '#FF6B6B' : '#C9A227',
-                    backgroundColor: proofStatus === 'confirmed' ? 'rgba(91, 165, 165, 0.08)' : proofStatus === 'failed' ? 'rgba(255, 107, 107, 0.08)' : 'rgba(201, 162, 39, 0.08)',
-                    textTransform: 'capitalize',
+                    backgroundColor: verifyResult === 'verified' ? 'rgba(91, 165, 165, 0.08)' : 'rgba(8, 26, 51, 0.04)',
+                    border: verifyResult === 'verified' ? '1px solid rgba(91, 165, 165, 0.2)' : '1px solid transparent',
                   }}
                 >
-                  {proofStatus === 'confirmed' && <CheckCircle size={10} />}
-                  {proofStatus === 'failed' && <XCircle size={10} />}
-                  {proofStatus === 'pending' && <Clock size={10} />}
-                  {proofStatus}
-                </span>
+                  {isVerifying ? (
+                    <Loader2 size={14} className="animate-spin" style={{ color: '#9CA3AF' }} />
+                  ) : verifyResult === 'verified' ? (
+                    <ShieldCheck size={14} style={{ color: '#5BA5A5' }} />
+                  ) : verifyResult === 'not_found' ? (
+                    <Clock size={14} style={{ color: '#C9A227' }} />
+                  ) : verifyResult === 'error' ? (
+                    <AlertCircle size={14} style={{ color: '#FF6B6B' }} />
+                  ) : (
+                    <RefreshCw size={14} style={{ color: '#081A33' }} />
+                  )}
+                  <span style={{
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    color: verifyResult === 'verified' ? '#5BA5A5' : verifyResult === 'error' ? '#FF6B6B' : '#081A33',
+                  }}>
+                    {isVerifying ? 'Verifying...' :
+                     verifyResult === 'verified' ? 'Confirmed on Blockchain' :
+                     verifyResult === 'not_found' ? 'Not yet confirmed — check again later' :
+                     verifyResult === 'error' ? 'Verification failed — try again' :
+                     'Check Blockchain Status'}
+                  </span>
+                </button>
+
+                <a
+                  href={`${FUJI_EXPLORER}/tx/${kudos.proof.tx_hash}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl active:scale-[0.98] transition-all"
+                  style={{ backgroundColor: 'rgba(8, 26, 51, 0.04)' }}
+                >
+                  <ExternalLink size={14} style={{ color: '#081A33' }} />
+                  <span style={{ fontSize: '12px', fontWeight: 600, color: '#081A33' }}>
+                    View on Blockchain Explorer
+                  </span>
+                </a>
               </div>
-            </div>
+            )}
 
-            {/* Hashes — minimal row style */}
-            <div className="space-y-2.5">
-              {kudos.proof.tx_hash && (
-                <div
-                  className="flex items-center gap-2 rounded-xl px-3.5 py-3"
-                  style={{ backgroundColor: '#FAFBFC' }}
+            {/* Collapsible Technical Details */}
+            {(kudos.proof.tx_hash || kudos.proof.anchor_hash) && (
+              <div>
+                <button
+                  onClick={() => setShowHashDetails(!showHashDetails)}
+                  className="w-full flex items-center justify-between py-2 text-left active:scale-[0.98] transition-all"
                 >
-                  <div className="flex-1 min-w-0">
-                    <div style={{ fontSize: '10px', color: '#9CA3AF', fontWeight: 600, letterSpacing: '0.4px', textTransform: 'uppercase', marginBottom: '2px' }}>
-                      Tx Hash
-                    </div>
-                    <code className="font-mono block truncate" style={{ fontSize: '12px', color: '#081A33' }}>
-                      {truncateHash(kudos.proof.tx_hash)}
-                    </code>
-                  </div>
-                  <button
-                    onClick={() => copyToClipboard(kudos.proof!.tx_hash!, 'tx')}
-                    className="p-1.5 rounded-lg active:scale-95 flex-shrink-0"
-                  >
-                    {copiedField === 'tx' ? (
-                      <CheckCircle size={14} style={{ color: '#5BA5A5' }} />
-                    ) : (
-                      <Copy size={14} style={{ color: '#C0C4CC' }} />
+                  <span style={{ fontSize: '11px', fontWeight: 600, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    Technical Details
+                  </span>
+                  {showHashDetails ? (
+                    <ChevronUp size={16} style={{ color: '#9CA3AF' }} />
+                  ) : (
+                    <ChevronDown size={16} style={{ color: '#9CA3AF' }} />
+                  )}
+                </button>
+                
+                <AnimatePresence>
+                  {showHashDetails && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="space-y-2.5 mt-2"
+                    >
+                    {kudos.proof.tx_hash && (
+                      <div
+                        className="rounded-xl px-3.5 py-3"
+                        style={{ backgroundColor: '#FAFBFC' }}
+                      >
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 min-w-0">
+                            <div style={{ fontSize: '10px', color: '#9CA3AF', fontWeight: 600, letterSpacing: '0.4px', textTransform: 'uppercase', marginBottom: '2px' }}>
+                              Transaction Hash
+                            </div>
+                            <code className="font-mono block truncate" style={{ fontSize: '12px', color: '#081A33' }}>
+                              {truncateHash(kudos.proof.tx_hash)}
+                            </code>
+                          </div>
+                          <button
+                            onClick={() => copyToClipboard(kudos.proof!.tx_hash!, 'tx')}
+                            className="p-1.5 rounded-lg active:scale-95 flex-shrink-0"
+                          >
+                            {copiedField === 'tx' ? (
+                              <CheckCircle size={14} style={{ color: '#5BA5A5' }} />
+                            ) : (
+                              <Copy size={14} style={{ color: '#C0C4CC' }} />
+                            )}
+                          </button>
+                        </div>
+                      </div>
                     )}
-                  </button>
-                </div>
-              )}
 
-              {kudos.proof.anchor_hash && (
-                <div
-                  className="flex items-center gap-2 rounded-xl px-3.5 py-3"
-                  style={{ backgroundColor: '#FAFBFC' }}
-                >
-                  <div className="flex-1 min-w-0">
-                    <div style={{ fontSize: '10px', color: '#9CA3AF', fontWeight: 600, letterSpacing: '0.4px', textTransform: 'uppercase', marginBottom: '2px' }}>
-                      Anchor Hash
-                    </div>
-                    <code className="font-mono block truncate" style={{ fontSize: '12px', color: '#081A33' }}>
-                      {truncateHash(kudos.proof.anchor_hash)}
-                    </code>
-                  </div>
-                  <button
-                    onClick={() => copyToClipboard(kudos.proof!.anchor_hash!, 'anchor')}
-                    className="p-1.5 rounded-lg active:scale-95 flex-shrink-0"
-                  >
-                    {copiedField === 'anchor' ? (
-                      <CheckCircle size={14} style={{ color: '#5BA5A5' }} />
-                    ) : (
-                      <Copy size={14} style={{ color: '#C0C4CC' }} />
+                    {kudos.proof.anchor_hash && (
+                      <div
+                        className="flex items-center gap-2 rounded-xl px-3.5 py-3"
+                        style={{ backgroundColor: '#FAFBFC' }}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div style={{ fontSize: '10px', color: '#9CA3AF', fontWeight: 600, letterSpacing: '0.4px', textTransform: 'uppercase', marginBottom: '2px' }}>
+                            Anchor Hash
+                          </div>
+                          <code className="font-mono block truncate" style={{ fontSize: '12px', color: '#081A33' }}>
+                            {truncateHash(kudos.proof.anchor_hash)}
+                          </code>
+                        </div>
+                        <button
+                          onClick={() => copyToClipboard(kudos.proof!.anchor_hash!, 'anchor')}
+                          className="p-1.5 rounded-lg active:scale-95 flex-shrink-0"
+                        >
+                          {copiedField === 'anchor' ? (
+                            <CheckCircle size={14} style={{ color: '#5BA5A5' }} />
+                          ) : (
+                            <Copy size={14} style={{ color: '#C0C4CC' }} />
+                          )}
+                        </button>
+                      </div>
                     )}
-                  </button>
-                </div>
-              )}
-            </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
           </motion.div>
         ) : (
           <motion.div

@@ -1,19 +1,23 @@
 // On-chain Worker routes: chain-worker-submit / chain-worker-confirm
 // DD-OPS-CHECKOUT-ONCHAIN §7–9
-// pg_cron から毎分 POST で呼ばれる。Authorization: Bearer <service_role_key> が必須。
+// Called by pg_cron via POST. Authorization: Bearer <service_role_key> required.
+// ethers@6 is heavy; dynamically imported so other routes are not slowed.
 import { Hono } from "npm:hono";
-import { ethers } from "npm:ethers@6";
 import { createServiceClient } from "./_shared.ts";
 
 const chainWorker = new Hono();
 
-// ReceiptRegistry コントラクトの最小 ABI（呼び出しに必要な関数のみ）
 const RECEIPT_REGISTRY_ABI = [
   "function recordReceipt(bytes32 anchorHash, uint32 points) external",
   "function isRecorded(bytes32 anchorHash) external view returns (bool)",
 ];
 
-/** pg_cron からの呼び出しを検証する Bearer 認証（SERVICE_ROLE_KEY または CHAIN_WORKER_SECRET） */
+async function loadEthers() {
+  const { ethers } = await import("npm:ethers@6");
+  return ethers;
+}
+
+/** Verify Bearer auth from pg_cron (SERVICE_ROLE_KEY or CHAIN_WORKER_SECRET) */
 function authorizeWorker(authHeader: string | undefined): boolean {
   const bearer = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : "";
   if (!bearer) return false;
@@ -24,14 +28,13 @@ function authorizeWorker(authHeader: string | undefined): boolean {
   return false;
 }
 
-/** 指数バックオフ（分）: min(2^retryCount, 60) */
+/** Exponential backoff (minutes): min(2^retryCount, 60) */
 function backoffMs(retryCount: number): number {
   return Math.min(Math.pow(2, retryCount), 60) * 60 * 1000;
 }
 
 // ─── chain-worker-submit ───────────────────────────────────────────────────
-// queued / failed (かつ next_attempt_at <= now) のレシートを最大 5 件処理し、
-// Avalanche C-Chain (Fuji) の ReceiptRegistry.recordReceipt() を呼んで送信する。
+// Process up to 5 queued/failed receipts (next_attempt_at <= now), send via ReceiptRegistry.recordReceipt() on Avalanche C-Chain (Fuji).
 chainWorker.post("/chain-worker-submit", async (c) => {
   if (!authorizeWorker(c.req.header("Authorization"))) {
     return c.json({ error: "Unauthorized" }, 401);
@@ -48,7 +51,7 @@ chainWorker.post("/chain-worker-submit", async (c) => {
   const supabase = createServiceClient();
   const now = new Date().toISOString();
 
-  // 対象レコード取得（queued/failed かつリトライ時刻が過ぎたもの）
+  // Fetch records (queued/failed and retry time passed)
   const { data: receipts, error: fetchErr } = await supabase
     .from("chain_receipt")
     .select("chain_receipt_id, anchor_hash, points_awarded, retry_count, contract_address")
@@ -65,6 +68,7 @@ chainWorker.post("/chain-worker-submit", async (c) => {
     return c.json({ processed: 0, submitted: 0, failed: 0 });
   }
 
+  const ethers = await loadEthers();
   const provider = new ethers.JsonRpcProvider(FUJI_RPC);
   const wallet = new ethers.Wallet(ISSUER_PK, provider);
 
@@ -89,10 +93,10 @@ chainWorker.post("/chain-worker-submit", async (c) => {
     const contract = new ethers.Contract(contractAddr, RECEIPT_REGISTRY_ABI, wallet);
 
     try {
-      // 冪等チェック: すでにオンチェーンに記録済みか確認
+      // Idempotency: check if already recorded on-chain
       const alreadyRecorded: boolean = await contract.isRecorded(receipt.anchor_hash);
       if (alreadyRecorded) {
-        // 既に記録済み → confirmed として扱う（重複送信防止）
+        // Already recorded → treat as confirmed (avoid duplicate send)
         await supabase.from("chain_receipt").update({
           receipt_status: "confirmed",
           confirmed_at: now,
@@ -105,10 +109,7 @@ chainWorker.post("/chain-worker-submit", async (c) => {
         continue;
       }
 
-      // ── Tx 送信 ──────────────────────────────────────────────────────────
-      // gasLimit: recordReceipt は 1 SSTORE + イベント発行で ~60,000 gas。
-      // 安全マージン込みで 100,000 に固定（Fuji/C-Chain でも有効）。
-      // gasPrice は ethers が EIP-1559 base fee を自動取得するため省略。
+      // Send Tx — recordReceipt ~60k gas (1 SSTORE + event). Use 100k for safety. gasPrice omitted (ethers uses EIP-1559).
       const tx = await contract.recordReceipt(
         receipt.anchor_hash,
         receipt.points_awarded,
@@ -149,8 +150,7 @@ chainWorker.post("/chain-worker-submit", async (c) => {
 });
 
 // ─── chain-worker-confirm ──────────────────────────────────────────────────
-// submitted のレシートについて eth_getTransactionReceipt を確認し、
-// status=1 → confirmed / status=0 → failed+backoff に更新する。
+// For submitted receipts, check eth_getTransactionReceipt; status=1 → confirmed, status=0 → failed+backoff.
 chainWorker.post("/chain-worker-confirm", async (c) => {
   if (!authorizeWorker(c.req.header("Authorization"))) {
     return c.json({ error: "Unauthorized" }, 401);
@@ -176,6 +176,7 @@ chainWorker.post("/chain-worker-confirm", async (c) => {
     return c.json({ processed: 0, confirmed: 0, failed: 0 });
   }
 
+  const ethers = await loadEthers();
   const provider = new ethers.JsonRpcProvider(FUJI_RPC);
 
   let confirmed = 0;
@@ -186,12 +187,12 @@ chainWorker.post("/chain-worker-confirm", async (c) => {
       const txReceipt = await provider.getTransactionReceipt(receipt.tx_hash);
 
       if (!txReceipt) {
-        // まだ pending — 次回スキャンに持ち越す
+        // Still pending — defer to next scan
         continue;
       }
 
       if (txReceipt.status === 1) {
-        // ── Tx 成功 ────────────────────────────────────────────────────────
+        // Tx success
         await supabase.from("chain_receipt").update({
           receipt_status: "confirmed",
           confirmed_at: now,

@@ -3,6 +3,7 @@ import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { Search, Eye, Calendar, CreditCard, Bed, LogOut, X, LogIn, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import { projectId, publicAnonKey } from '/utils/supabase/info';
+import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 import { useAuth } from '../components/AuthContext';
 
 const hotelLogoUrl = 'https://images.unsplash.com/photo-1746130702924-cecefafa9092?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjBob3RlbCUyMGxvZ28lMjBpY29ufGVufDF8fHx8MTc3MjExMjQ2Mnww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral';
@@ -68,7 +69,7 @@ function DraggableCard({ card }: { card: Card }) {
       }}
     >
       <div className="flex items-start justify-between mb-6">
-        <img
+        <ImageWithFallback
           src={hotelLogoUrl}
           alt="Hotel"
           className="w-10 h-10 rounded-lg object-cover"
@@ -262,40 +263,12 @@ function StaysPageContent() {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [dataError, setDataError] = useState<string | null>(null);
-  const [seeded, setSeeded] = useState(false);
-
   const companyId = activeMembership?.company_id;
-
-  // Seed database on first load (idempotent)
-  useEffect(() => {
-    const seedDatabase = async () => {
-      try {
-        console.log('[seed] Seeding database...');
-        const res = await fetch(`${API_BASE}/seed`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${publicAnonKey}`,
-          },
-        });
-        const data = await res.json();
-        if (res.ok) {
-          console.log('[seed] Seed result:', data);
-        } else {
-          console.warn('[seed] Seed failed:', data);
-        }
-      } catch (err) {
-        console.warn('[seed] Seed network error:', err);
-      }
-      setSeeded(true);
-    };
-    seedDatabase();
-  }, []);
 
   // Fetch rooms and cards from API
   const fetchData = useCallback(async () => {
     const accessToken = session?.access_token;
-    if (!accessToken || !seeded || !companyId) return;
+    if (!accessToken || !companyId) return;
 
     setDataLoading(true);
     setDataError(null);
@@ -374,7 +347,7 @@ function StaysPageContent() {
     } finally {
       setDataLoading(false);
     }
-  }, [session?.access_token, companyId, seeded]);
+  }, [session?.access_token, companyId]);
 
   useEffect(() => {
     fetchData();
@@ -752,7 +725,7 @@ function StaysPageContent() {
                   {/* Card Preview */}
                   <div className="bg-gradient-to-br from-[#081A33] to-[#0A2240] rounded-xl p-5">
                     <div className="flex items-start justify-between mb-4">
-                      <img src={hotelLogoUrl} alt="Hotel" className="w-8 h-8 rounded-lg object-cover" />
+                      <ImageWithFallback src={hotelLogoUrl} alt="Hotel" className="w-8 h-8 rounded-lg object-cover" />
                       <div className="text-xs font-medium text-white/60 tracking-wider">Heartel</div>
                     </div>
                     <div>
@@ -895,7 +868,7 @@ function StaysPageContent() {
                 </h3>
                 <div className="bg-gradient-to-br from-[#081A33] to-[#0A2240] rounded-lg p-5">
                   <div className="flex items-start justify-between mb-4">
-                    <img src={hotelLogoUrl} alt="Hotel" className="w-12 h-12 rounded-lg object-cover" />
+                    <ImageWithFallback src={hotelLogoUrl} alt="Hotel" className="w-12 h-12 rounded-lg object-cover" />
                     <div className="text-xs font-medium text-white/60 tracking-wider">Heartel</div>
                   </div>
                   <div>

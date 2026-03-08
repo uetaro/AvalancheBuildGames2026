@@ -2,7 +2,7 @@ import { ArrowLeft, CheckCircle2, CreditCard } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router';
 import { motion } from 'motion/react';
 import { useState } from 'react';
-import pointIcon from 'figma:asset/5560785a34694df91ca800dfb17c52f6abbe5399.png';
+import pointIcon from 'figma:asset/coin.png';
 
 export default function Exchange() {
   const navigate = useNavigate();

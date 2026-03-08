@@ -65,8 +65,11 @@ function daysAgo(days: number, hourOffset = 0): string {
 
 // ─── seed ──────────────────────────────────────────────────
 // POST /make-server-20781d19/seed
-// Creates minimum seed data for check-in flow (idempotent via upsert)
+// DISABLED: seed endpoint is disabled in production to prevent accidental data injection.
 seed.post(`${ROUTE_PREFIX}/seed`, async (c) => {
+  return c.json({ error_code: "FORBIDDEN", message: "Seed endpoint is disabled." }, 403);
+  // --- original seed logic below (disabled) ---
+  if (false) {
   try {
     // Ensure required tables exist before seeding
     await ensureTables();
@@ -473,6 +476,7 @@ seed.post(`${ROUTE_PREFIX}/seed`, async (c) => {
     console.log("[seed] Unexpected error:", e);
     return c.json({ error_code: "INTERNAL_ERROR", message: `Seed failed: ${e}` }, 500);
   }
+  } // end if (false)
 });
 
 export default seed;

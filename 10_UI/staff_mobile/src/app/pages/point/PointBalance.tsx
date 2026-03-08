@@ -1,26 +1,45 @@
+import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { TrendingUp, Gift, Sparkles, ArrowUpRight, Zap } from 'lucide-react';
+import { TrendingUp, Gift, ArrowUpRight } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { ResponsiveContainer, AreaChart, Area } from 'recharts';
-import pointIcon from 'figma:asset/5560785a34694df91ca800dfb17c52f6abbe5399.png';
+import pointIcon from 'figma:asset/coin.png';
+import { supabase, serverUrl, authHeaders } from '../../lib/supabase';
+
+interface PointBalanceData {
+  balance: number;
+  this_month: number;
+  monthly_trend: Array<{ month: string; points: number }>;
+}
 
 export default function PointBalance() {
   const navigate = useNavigate();
+  const [data, setData] = useState<PointBalanceData | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const balance = {
-    total: 2850,
-    thisMonth: 240,
-    expiringSoon: 150
-  };
+  useEffect(() => {
+    const fetchBalance = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+        const res = await fetch(`${serverUrl}/my-point-balance`, {
+          headers: authHeaders(session.access_token),
+        });
+        if (!res.ok) return;
+        const json = await res.json();
+        setData(json);
+      } catch {
+        // ignore
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchBalance();
+  }, []);
 
-  const chartData = [
-    { month: 'Sep', points: 180 },
-    { month: 'Oct', points: 220 },
-    { month: 'Nov', points: 190 },
-    { month: 'Dec', points: 260 },
-    { month: 'Jan', points: 230 },
-    { month: 'Feb', points: 240 }
-  ];
+  const totalBalance = data?.balance ?? 0;
+  const thisMonth = data?.this_month ?? 0;
+  const chartData = data?.monthly_trend ?? [];
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#F8F9FA' }}>
@@ -129,7 +148,7 @@ export default function PointBalance() {
               </div>
               <div className="flex items-baseline gap-3">
                 <div style={{ fontSize: '64px', fontWeight: 700, color: '#081A33', letterSpacing: '-3px', lineHeight: '1' }}>
-                  {balance.total.toLocaleString()}
+                  {loading ? '—' : totalBalance.toLocaleString()}
                 </div>
                 <div style={{ fontSize: '18px', color: '#9CA3AF', fontWeight: 600, paddingBottom: '8px' }}>
                   pts
@@ -174,7 +193,7 @@ export default function PointBalance() {
                   </div>
                   <div className="flex items-baseline gap-2">
                     <div style={{ fontSize: '32px', fontWeight: 700, color: '#5BA5A5', letterSpacing: '-1px' }}>
-                      +{balance.thisMonth}
+                      {loading ? '—' : `+${thisMonth}`}
                     </div>
                     <div style={{ fontSize: '13px', color: '#9CA3AF', fontWeight: 600 }}>
                       pts
@@ -256,10 +275,10 @@ export default function PointBalance() {
               </div>
               <div>
                 <div style={{ fontSize: '16px', fontWeight: 600, color: '#081A33', marginBottom: '4px' }}>
-                  History
+                  Exchange History
                 </div>
                 <div style={{ fontSize: '13px', color: '#9CA3AF', lineHeight: '1.4' }}>
-                  View all transactions
+                  View exchange history
                 </div>
               </div>
             </div>

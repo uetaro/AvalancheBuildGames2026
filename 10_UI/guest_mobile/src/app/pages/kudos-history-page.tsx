@@ -1,7 +1,8 @@
 import { useNavigate } from "react-router";
 import { ArrowLeft, Calendar, Sparkles, Briefcase, HandHeart, Zap, Smile, Star, Search } from "lucide-react";
 import { useState } from "react";
-import kudosIcon from "figma:asset/f4bf621b3ae64967e30c73582c7e028cfa4590e9.png";
+import kudosIcon from "figma:asset/kudos.png";
+import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 
 interface KudosRecord {
   id: string;
@@ -85,7 +86,7 @@ export function KudosHistoryPage() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
-      <header className="relative bg-primary text-primary-foreground">
+      <header className="relative bg-primary text-primary-foreground pt-10 pb-2">
         <div className="absolute inset-0 opacity-[0.02]" style={{
           backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
         }} />
@@ -120,7 +121,7 @@ export function KudosHistoryPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search by staff, role, or category..."
-                className="w-full bg-white border border-border rounded-none pl-12 pr-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-accent font-light text-sm shadow-sm"
+                className="w-full bg-white border border-border rounded-none pl-12 pr-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-kudos font-light text-sm shadow-sm"
               />
             </div>
             {searchQuery && (
@@ -143,7 +144,7 @@ export function KudosHistoryPage() {
                 {/* Header */}
                 <div className="flex gap-3 mb-4">
                   <div className="flex-shrink-0 w-12 h-12 rounded-none overflow-hidden bg-muted">
-                    <img
+                    <ImageWithFallback
                       src={kudos.imageUrl}
                       alt={kudos.staffName}
                       className="w-full h-full object-cover"
@@ -161,13 +162,13 @@ export function KudosHistoryPage() {
                     </p>
                   </div>
                   <div className="flex-shrink-0">
-                    <IconComponent className="w-5 h-5 text-accent" />
+                    <IconComponent className="w-5 h-5 text-kudos" />
                   </div>
                 </div>
 
                 {/* Category */}
                 <div className="mb-3">
-                  <span className="inline-block text-xs bg-[#FF6B6B]/10 text-[#FF6B6B] px-3 py-1 rounded-none font-light">
+                  <span className="inline-block text-xs bg-kudos/10 text-kudos px-3 py-1 rounded-none font-light">
                     {kudos.category}
                   </span>
                 </div>
@@ -216,7 +217,7 @@ export function KudosHistoryPage() {
             </p>
             <button
               onClick={() => navigate("/staff")}
-              className="bg-accent text-accent-foreground px-6 py-3 rounded-none hover:shadow-md transition-all font-light"
+              className="bg-kudos text-kudos-foreground px-6 py-3 rounded-none hover:shadow-md transition-all font-light"
             >
               Select Staff
             </button>

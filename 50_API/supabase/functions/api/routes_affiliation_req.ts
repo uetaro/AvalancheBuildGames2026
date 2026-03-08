@@ -4,7 +4,7 @@ import { getAuthUser, createServiceClient } from "./_shared.ts";
 
 const affiliationReq = new Hono();
 
-// GET /company-search — 会社検索
+// GET /company-search — company search
 affiliationReq.get("/company-search", async (c) => {
   try {
     const auth = await getAuthUser(c);
@@ -32,7 +32,7 @@ affiliationReq.get("/company-search", async (c) => {
   }
 });
 
-// POST /affiliation-request — 所属申請作成
+// POST /affiliation-request — create affiliation request
 affiliationReq.post("/affiliation-request", async (c) => {
   try {
     const auth = await getAuthUser(c);
@@ -105,7 +105,7 @@ affiliationReq.post("/affiliation-request", async (c) => {
   }
 });
 
-// GET /my-affiliation-requests — 自分の申請一覧
+// GET /my-affiliation-requests — list my affiliation requests
 affiliationReq.get("/my-affiliation-requests", async (c) => {
   try {
     const auth = await getAuthUser(c);
@@ -140,7 +140,7 @@ affiliationReq.get("/my-affiliation-requests", async (c) => {
   }
 });
 
-// DELETE /affiliation-request/:id — 申請キャンセル
+// DELETE /affiliation-request/:id — cancel request
 affiliationReq.delete("/affiliation-request/:id", async (c) => {
   try {
     const auth = await getAuthUser(c);

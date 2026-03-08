@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Download, TrendingUp, Gift, Calendar, X } from 'lucide-react';
-import pointIcon from 'figma:asset/5560785a34694df91ca800dfb17c52f6abbe5399.png';
+import pointIcon from 'figma:asset/coin.png';
 
 type OrderStatus = 'pending' | 'processing' | 'completed' | 'failed';
 

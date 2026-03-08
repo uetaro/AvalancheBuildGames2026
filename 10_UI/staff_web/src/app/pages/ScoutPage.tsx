@@ -1,6 +1,6 @@
 import { Search, MapPin, Building, Mail, Briefcase, X, TrendingUp, Award, Users, Calendar, MessageSquare, ArrowLeft, Sparkles } from 'lucide-react';
 import { LineChart, Line, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import kudosIcon from 'figma:asset/d13c169a55630b616ca2bbf29b05b5269d82cbb9.png';
+import kudosIcon from 'figma:asset/kudos.png';
 import { AIChat, AIChatButton } from '../components/AIChat';
 import { useState } from 'react';
 

@@ -156,7 +156,7 @@ export default function LoginPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@example.com"
-                    className="w-full pl-10 pr-4 py-3 rounded-lg border border-[#E5E7EB] bg-white focus:outline-none focus:ring-2 focus:ring-[#C9A227] focus:border-transparent transition-all"
+                    className="w-full pl-10 pr-4 py-3 rounded-lg border border-[#E5E7EB] bg-white text-[#081A33] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C9A227] focus:border-transparent transition-all"
                     disabled={loading}
                     autoComplete="email"
                   />
@@ -175,7 +175,7 @@ export default function LoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Enter your password"
-                    className="w-full pl-10 pr-12 py-3 rounded-lg border border-[#E5E7EB] bg-white focus:outline-none focus:ring-2 focus:ring-[#C9A227] focus:border-transparent transition-all"
+                    className="w-full pl-10 pr-12 py-3 rounded-lg border border-[#E5E7EB] bg-white text-[#081A33] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C9A227] focus:border-transparent transition-all"
                     disabled={loading}
                     autoComplete="current-password"
                   />
@@ -217,7 +217,7 @@ export default function LoginPage() {
                   value={signupName}
                   onChange={(e) => setSignupName(e.target.value)}
                   placeholder="Your name"
-                  className="w-full px-4 py-3 rounded-lg border border-[#E5E7EB] bg-white focus:outline-none focus:ring-2 focus:ring-[#C9A227] focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 rounded-lg border border-[#E5E7EB] bg-white text-[#081A33] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C9A227] focus:border-transparent transition-all"
                   disabled={loading}
                 />
               </div>
@@ -234,7 +234,7 @@ export default function LoginPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@example.com"
-                    className="w-full pl-10 pr-4 py-3 rounded-lg border border-[#E5E7EB] bg-white focus:outline-none focus:ring-2 focus:ring-[#C9A227] focus:border-transparent transition-all"
+                    className="w-full pl-10 pr-4 py-3 rounded-lg border border-[#E5E7EB] bg-white text-[#081A33] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C9A227] focus:border-transparent transition-all"
                     disabled={loading}
                   />
                 </div>
@@ -252,7 +252,7 @@ export default function LoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Min 6 characters"
-                    className="w-full pl-10 pr-12 py-3 rounded-lg border border-[#E5E7EB] bg-white focus:outline-none focus:ring-2 focus:ring-[#C9A227] focus:border-transparent transition-all"
+                    className="w-full pl-10 pr-12 py-3 rounded-lg border border-[#E5E7EB] bg-white text-[#081A33] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C9A227] focus:border-transparent transition-all"
                     disabled={loading}
                   />
                   <button

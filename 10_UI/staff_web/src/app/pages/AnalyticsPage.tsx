@@ -1,5 +1,5 @@
 import { Sparkles, AlertCircle, CheckCircle, Lightbulb, Building, User, ChevronDown, X, MessageSquare, Loader2, TrendingUp, Award, BedDouble, RefreshCw } from 'lucide-react';
-import kudosIcon from 'figma:asset/d13c169a55630b616ca2bbf29b05b5269d82cbb9.png';
+import kudosIcon from 'figma:asset/kudos.png';
 import { AIChat, AIChatButton } from '../components/AIChat';
 import { useState, useEffect, useCallback } from 'react';
 import { LineChart, Line, BarChart, Bar, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area } from 'recharts';

@@ -290,10 +290,10 @@ export default function AffiliationApplication() {
         className="relative overflow-hidden"
         style={{
           background: 'linear-gradient(135deg, #081A33 0%, #0D2B4F 50%, #143A6B 100%)',
-          paddingTop: 'env(safe-area-inset-top)',
+          paddingTop: 'max(env(safe-area-inset-top, 0px), 44px)',
         }}
       >
-        <div className="relative z-10 px-5 pt-4 pb-6">
+        <div className="relative z-10 px-5 pt-6 pb-6">
           <div className="flex items-center gap-3 mb-1">
             <button
               onClick={() => navigate('/app/account')}

@@ -16,6 +16,8 @@ import PublicationRangeSetting from "./pages/account/PublicationRangeSetting";
 import SharedURL from "./pages/account/SharedURL";
 import AffiliationApplication from "./pages/account/AffiliationApplication";
 
+const base = import.meta.env.BASE_URL.replace(/\/+$/, '') || undefined;
+
 export const router = createBrowserRouter([
   {
     path: "/",
@@ -43,4 +45,4 @@ export const router = createBrowserRouter([
       { path: "account/affiliation", Component: AffiliationApplication },
     ],
   },
-]);
+], { basename: base });

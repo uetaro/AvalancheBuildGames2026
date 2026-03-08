@@ -4,7 +4,7 @@ import { motion } from 'motion/react';
 import { Loader2 } from 'lucide-react';
 import { supabase, serverUrl } from '../lib/supabase';
 import { publicAnonKey } from '/utils/supabase/info';
-import logoImg from 'figma:asset/10ceb6a2b0a27dff785a9f631a508e43f0bf119d.png';
+import logoImg from 'figma:asset/logo.png';
 
 export default function LoginPage() {
   const navigate = useNavigate();

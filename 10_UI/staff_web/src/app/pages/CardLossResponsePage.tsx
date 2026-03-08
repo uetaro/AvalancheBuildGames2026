@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Search, Plus, CreditCard, AlertCircle, CheckCircle, XCircle, Clock, X, MessageSquare } from 'lucide-react';
+import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 
 const hotelLogoUrl = 'https://images.unsplash.com/photo-1746130702924-cecefafa9092?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjBob3RlbCUyMGxvZ28lMjBpY29ufGVufDF8fHx8MTc3MjExMjQ2Mnww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral';
 
@@ -246,7 +247,7 @@ export default function CardLossResponsePage() {
                   <h3 className="text-sm font-semibold text-[#081A33] mb-3">Card Information</h3>
                   <div className="bg-gradient-to-br from-[#081A33] to-[#0A2240] rounded-xl p-6 max-w-sm">
                     <div className="flex items-start justify-between mb-8">
-                      <img 
+                      <ImageWithFallback 
                         src={hotelLogoUrl} 
                         alt="Hotel" 
                         className="w-12 h-12 rounded-lg object-cover"
@@ -394,7 +395,7 @@ export default function CardLossResponsePage() {
             <div className="p-6 space-y-4">
               <div className="bg-gradient-to-br from-[#081A33] to-[#0A2240] rounded-xl p-5">
                 <div className="flex items-start justify-between mb-6">
-                  <img 
+                  <ImageWithFallback 
                     src={hotelLogoUrl} 
                     alt="Hotel" 
                     className="w-10 h-10 rounded-lg object-cover"

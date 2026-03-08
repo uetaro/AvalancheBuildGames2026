@@ -1,6 +1,11 @@
 import { useNavigate } from "react-router";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Nfc } from "lucide-react";
 import { motion } from "motion/react";
+import { useEffect, useState } from "react";
+import logoImg from "figma:asset/logo.png";
+
+// Debug: hardcoded test card for Avalanche Test / Room 401
+const DEBUG_CARD_URL = "/entry?c=a73427d9-731e-46ee-9ccb-4c5fe76c099d&co=324d2d08-f659-4d83-b942-f0cb4077e0ee";
 
 const pageTransition = {
   initial: { opacity: 0 },
@@ -11,6 +16,25 @@ const pageTransition = {
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const [companyName, setCompanyName] = useState<string | null>(null);
+  const [useDebugCard, setUseDebugCard] = useState(true);
+
+  useEffect(() => {
+    const raw = localStorage.getItem("stay_data");
+    if (raw) {
+      try {
+        const stay = JSON.parse(raw);
+        if (stay?.company_name) setCompanyName(stay.company_name);
+      } catch {}
+    }
+  }, []);
+
+  const handleGuestAccess = () => {
+    if (useDebugCard) {
+      navigate(DEBUG_CARD_URL);
+    }
+    // When OFF, entry is triggered by physical NFC tap (card encodes the URL directly)
+  };
 
   return (
     <motion.div 
@@ -36,15 +60,21 @@ export function LoginPage() {
           transition={{ duration: 0.8, ease: "easeOut" }}
         >
           <div className="mb-8">
-            <div className="text-accent text-4xl font-light tracking-wider mx-auto mb-8 text-center">
-              Heartel
+            <div className="flex justify-center mb-8">
+              <img
+                src={logoImg}
+                alt="Heartel"
+                className="w-20 h-20 object-contain"
+              />
             </div>
-            <h1 className="text-5xl text-white mb-4 tracking-tight font-light">
-              Grand Hotel
-            </h1>
+            {companyName && (
+              <h1 className="text-4xl text-white mb-4 tracking-tight font-light text-center">
+                {companyName}
+              </h1>
+            )}
             <div className="w-12 h-[1px] bg-accent/60 mx-auto mb-6" />
-            <p className="text-white/60 text-sm tracking-[0.2em] uppercase">
-              Kudos System
+            <p className="text-white/60 text-sm tracking-[0.2em] uppercase text-center">
+              HEARTEL
             </p>
           </div>
         </motion.div>
@@ -56,24 +86,53 @@ export function LoginPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
         >
+          {/* Debug toggle */}
+          <label className="flex items-center gap-3 px-1 cursor-pointer select-none">
+            <div
+              onClick={() => setUseDebugCard((v) => !v)}
+              className="relative flex-shrink-0 w-10 h-6 rounded-full transition-colors duration-200"
+              style={{ backgroundColor: useDebugCard ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.12)' }}
+            >
+              <div
+                className="absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200"
+                style={{ transform: useDebugCard ? 'translateX(18px)' : 'translateX(4px)' }}
+              />
+            </div>
+            <span className="text-xs text-white/50 font-light">
+              Avalanche Test (Room 401)
+            </span>
+          </label>
+
           {/* Guest Access - Primary */}
-          <motion.button
-            onClick={() => navigate("/entry?c=a73427d9-731e-46ee-9ccb-4c5fe76c099d&co=324d2d08-f659-4d83-b942-f0cb4077e0ee")}
-            className="w-full bg-white text-primary py-7 px-8 rounded-none shadow-2xl hover:shadow-accent/10 transition-all group relative overflow-hidden"
-            whileHover={{ y: -4 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-accent/0 via-accent/5 to-accent/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
-            <div className="relative flex items-center justify-between">
+          {useDebugCard ? (
+            <motion.button
+              onClick={handleGuestAccess}
+              className="w-full bg-accent text-white py-7 px-8 rounded-none shadow-2xl hover:shadow-accent/30 transition-all group relative overflow-hidden"
+              whileHover={{ y: -4 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
+              <div className="relative flex items-center justify-between">
+                <div className="text-left">
+                  <span className="block text-lg font-light mb-1">Continue as Guest</span>
+                  <span className="block text-xs text-white/70 font-light">
+                    Send Kudos instantly • No registration required
+                  </span>
+                </div>
+                <ArrowRight className="w-5 h-5 opacity-70 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+              </div>
+            </motion.button>
+          ) : (
+            <div className="w-full bg-white/5 border border-white/10 py-7 px-8 rounded-none flex items-center justify-between">
               <div className="text-left">
-                <span className="block text-lg font-light mb-1">Continue as Guest</span>
-                <span className="block text-xs text-muted-foreground font-light">
-                  Send Kudos instantly • No registration required
+                <span className="block text-lg font-light text-white mb-1">Continue as Guest</span>
+                <span className="block text-xs text-white/40 font-light">
+                  Tap your NFC card to enter
                 </span>
               </div>
-              <ArrowRight className="w-5 h-5 opacity-60 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+              <Nfc className="w-5 h-5 text-white/30" />
             </div>
-          </motion.button>
+          )}
 
           {/* Login - Secondary */}
           <motion.button
@@ -122,17 +181,7 @@ export function LoginPage() {
           {/* Removed stats section */}
         </motion.div>
 
-        {/* Footer */}
-        <motion.div 
-          className="absolute bottom-8 left-0 right-0 text-center"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.8, delay: 0.6 }}
-        >
-          <p className="text-white/30 text-xs font-light tracking-wider">
-            Your voice shapes their future
-          </p>
-        </motion.div>
+
       </div>
     </motion.div>
   );

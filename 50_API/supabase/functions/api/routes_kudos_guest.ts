@@ -3,28 +3,18 @@
 // since the RPC restricts member_role to 'employee' only but the
 // staff list shows employee/staff/manager.
 import { Hono } from "npm:hono";
-import { ethers } from "npm:ethers@6";
 import { errorResponse, validateGuestSession, createServiceClient } from "./_shared.ts";
 import { scoreKudosContent } from "./moderation.ts";
 
 const ALLOWED_ROLES = ["employee", "staff", "manager"];
 
-// ── Blockchain: anchor_hash 生成（Option B — 送信時点でオンチェーン記録）──────
-// 設計書 DD-OPS-CHECKOUT-ONCHAIN §5.2 準拠
-// V2: message_text のハッシュを追加し、メッセージ改ざんも検知可能にした
-const CHAIN_ID = 43113; // Fuji Testnet（本番は 43114）
-const SCHEMA_ID = ethers.keccak256(ethers.toUtf8Bytes("HEARTEL_RECEIPT_V2"));
+const CHAIN_ID = 43113; // Fuji Testnet (production: 43114)
 
 /**
- * anchor_hash = keccak256(abi.encode(
- *   SCHEMA_ID, kudos_uuid(bytes16), stay_uuid(bytes16),
- *   company_uuid(bytes16), receiver_uuid(bytes16),
- *   category_hash(bytes32), message_hash(bytes32), points(uint32), issued_at_sec(uint64)
- * ))
- * DB の値から確定的に計算される。チェックアウト後に再計算しても一致する。
- * V2 追加: message_hash = keccak256(message_text) により本文の改ざんも検知可能。
+ * Compute anchor_hash via dynamic import of ethers.
+ * ethers@6 is heavy; load only when recording chain_receipt.
  */
-function computeAnchorHash(k: {
+async function computeAnchorHash(k: {
   kudos_id: string;
   stay_id: string;
   company_id: string;
@@ -33,7 +23,10 @@ function computeAnchorHash(k: {
   message_text: string;
   points_awarded: number;
   created_at: string;
-}): string {
+}): Promise<string> {
+  const { ethers } = await import("npm:ethers@6");
+  const SCHEMA_ID = ethers.keccak256(ethers.toUtf8Bytes("HEARTEL_RECEIPT_V2"));
+
   const categoryHash = ethers.keccak256(ethers.toUtf8Bytes(k.category ?? ""));
   const messageHash = ethers.keccak256(ethers.toUtf8Bytes(k.message_text ?? ""));
   const issuedAtSec = BigInt(Math.floor(new Date(k.created_at).getTime() / 1000));
@@ -231,10 +224,9 @@ kudos.post("/public-kudos-send", async (c) => {
       }
     }
 
-    // ── 9) AI コンテンツスコアリング（オンチェーン記録前にチェック）────────────
-    // ネガティブ表現・誹謗中傷・無意味な文字列等を検出。閾値未満なら投稿を中断。
+    // 9) AI content scoring (before on-chain record) — reject if below threshold
     const contentThreshold = (rules as any).content_score_threshold ?? 90;
-    const moderationResult = await scoreKudosContent(message_text.trim(), contentThreshold);
+    const moderationResult = await scoreKudosContent(message_text.trim(), contentThreshold, category.trim());
 
     if (!moderationResult.passed) {
       console.log("[public-kudos-send] moderation REJECTED", {
@@ -242,14 +234,13 @@ kudos.post("/public-kudos-send", async (c) => {
         score: moderationResult.score,
         threshold: contentThreshold,
         reason: moderationResult.reason,
+        suggestion: moderationResult.suggestion,
         flags: moderationResult.flags,
         message_preview: message_text.trim().slice(0, 30) + (message_text.length > 30 ? "..." : ""),
       });
       return c.json(
-        errorResponse("CONTENT_MODERATION_FAILED", "メッセージの内容が投稿基準を満たしていません。内容を修正して再度お試しください。", {
-          score: moderationResult.score,
-          threshold: contentThreshold,
-          reason: moderationResult.reason,
+        errorResponse("CONTENT_MODERATION_FAILED", moderationResult.suggestion ?? "Could you revise your message a little? We want to make sure your Kudos is the best it can be.", {
+          suggestion: moderationResult.suggestion,
           flags: moderationResult.flags,
         }),
         400
@@ -300,13 +291,9 @@ kudos.post("/public-kudos-send", async (c) => {
       );
     }
 
-    // ── 12) オンチェーン記録キュー投入（Option B — 送信時点） ──────────
-    // anchor_hash を今この時点の DB 値から確定的に計算し、chain_receipt を queued で作成。
-    // Worker（chain-worker-submit）が ~1 分以内に Avalanche C-Chain に送信する。
-    // kudos_status（pending/confirmed/rejected）はチェックアウト時に DB 側で確定するが、
-    // チェーン上の記録（存在証明）はここで永久にロックされる。
+    // 12) Enqueue on-chain record (Option B — at send time). Compute anchor_hash from current DB state, create chain_receipt as queued. Worker (chain-worker-submit) sends to Avalanche C-Chain. ethers@6 loaded dynamically so main flow is unaffected on failure.
     try {
-      const anchorHash = computeAnchorHash({
+      const anchorHash = await computeAnchorHash({
         kudos_id: newKudos.kudos_id,
         stay_id,
         company_id,
@@ -341,13 +328,12 @@ kudos.post("/public-kudos-send", async (c) => {
       });
 
       if (receiptErr) {
-        // Non-fatal: Kudos 自体は成功させる。Worker のリトライで回収可能。
         console.error("[public-kudos-send] chain_receipt insert warning:", receiptErr.message);
       } else {
         console.log(`[public-kudos-send] chain_receipt queued: kudos_id=${newKudos.kudos_id} anchor=${anchorHash.slice(0, 10)}...`);
       }
-    } catch (hashErr) {
-      console.error("[public-kudos-send] anchor_hash computation error (non-fatal):", hashErr);
+    } catch (hashErr: any) {
+      console.error("[public-kudos-send] anchor_hash/chain_receipt error (non-fatal):", hashErr?.message ?? hashErr);
     }
 
     // ── 13) Insert moderation record (AI score + rule-based) ──────────

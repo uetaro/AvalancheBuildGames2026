@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { AlertCircle } from "lucide-react";
 import { projectId, publicAnonKey } from "/utils/supabase/info";
-import kudosBadgeImg from "figma:asset/d13c169a55630b616ca2bbf29b05b5269d82cbb9.png";
+import kudosBadgeImg from "figma:asset/kudos.png";
 
 type ErrorState = {
   code: string;
