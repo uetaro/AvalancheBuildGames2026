@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useOutletContext } from 'react-router';
 import { Search, Plus, Edit, X, Bed, Users } from 'lucide-react';
-import heartelCoin from 'figma:asset/2bae1d84c0ac1bf4d7a1c7d94a03e85fe11d4ea6.png';
+import heartelCoin from 'figma:asset/coin.png';
 
 type RoomStatus = 'available' | 'occupied' | 'inactive';
 

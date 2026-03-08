@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite --port 3002",
     "build": "tsc -b && vite build",
+    "build:s3": "tsc -b && vite build --base /staff-mobile/",
     "preview": "vite preview --port 3002",
     "type-check": "tsc --noEmit"
   },

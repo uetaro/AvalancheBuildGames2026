@@ -3,6 +3,7 @@ import {
   Search, CreditCard, Bed, CheckCircle, XCircle, Link2, Unlink, Loader2,
   AlertCircle, RefreshCw, ChevronDown, X,
 } from 'lucide-react';
+import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 import { projectId, publicAnonKey } from '/utils/supabase/info';
 import { useAuth } from '../components/AuthContext';
 
@@ -380,7 +381,7 @@ export default function CardMasterPage() {
                   <h3 className="text-sm font-semibold text-[#081A33] mb-3">Card Information</h3>
                   <div className="bg-gradient-to-br from-[#081A33] to-[#0A2240] rounded-xl p-6 max-w-sm">
                     <div className="flex items-start justify-between mb-8">
-                      <img src={hotelLogoUrl} alt="Hotel" className="w-12 h-12 rounded-lg object-cover" />
+                      <ImageWithFallback src={hotelLogoUrl} alt="Hotel" className="w-12 h-12 rounded-lg object-cover" />
                       <div className="text-xs font-medium text-white/60 tracking-wider">Heartel</div>
                     </div>
                     <div className="space-y-1">

@@ -5,13 +5,14 @@ import { EntryPage } from "./pages/entry-page";
 import { HomePage } from "./pages/home-page";
 import { StaffListPage } from "./pages/staff-list-page";
 import { KudosPostPage } from "./pages/kudos-post-page";
-import { KudosProcessingPage } from "./pages/kudos-processing-page";
 import { KudosCompletePage } from "./pages/kudos-complete-page";
 import { AccountCreatePage } from "./pages/account-create-page";
 import { MyPage } from "./pages/my-page";
 import { ProfileEditPage } from "./pages/profile-edit-page";
 import { KudosHistoryPage } from "./pages/kudos-history-page";
 import { SettingsPage } from "./pages/settings-page";
+
+const base = import.meta.env.BASE_URL.replace(/\/+$/, '') || undefined;
 
 export const router = createBrowserRouter([
   {
@@ -33,10 +34,6 @@ export const router = createBrowserRouter([
   {
     path: "/staff",
     Component: StaffListPage,
-  },
-  {
-    path: "/kudos/processing",
-    Component: KudosProcessingPage,
   },
   {
     path: "/kudos/complete",
@@ -66,4 +63,4 @@ export const router = createBrowserRouter([
     path: "/my-page/settings",
     Component: SettingsPage,
   },
-]);
+], { basename: base });

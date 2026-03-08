@@ -4,7 +4,7 @@ import { getAuthUser, createServiceClient } from "./_shared.ts";
 
 const work = new Hono();
 
-// POST /work-tap — NFCタップで出退勤
+// POST /work-tap — clock in/out via NFC tap
 work.post("/work-tap", async (c) => {
   try {
     const auth = await getAuthUser(c);
@@ -131,7 +131,7 @@ work.post("/work-tap", async (c) => {
   }
 });
 
-// GET /work-tags — 利用可能な work_tag 一覧（デバッグ用）
+// GET /work-tags — list available work_tags (debug)
 work.get("/work-tags", async (c) => {
   try {
     const auth = await getAuthUser(c);
@@ -153,7 +153,7 @@ work.get("/work-tags", async (c) => {
   }
 });
 
-// GET /work-status — 現在の勤務状態を取得
+// GET /work-status — get current work status
 work.get("/work-status", async (c) => {
   try {
     const auth = await getAuthUser(c);

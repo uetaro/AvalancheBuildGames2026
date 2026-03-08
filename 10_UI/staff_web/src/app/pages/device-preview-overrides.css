@@ -1,0 +1,67 @@
+/* iPhone 16 Pro / Pro Max: apply iphone-16 look for unsupported model */
+.phone-mockup.iphone-16-pro .phone-frame,
+.phone-mockup.iphone-16-pro-max .phone-frame {
+  background: #000;
+  border-radius: 44px;
+  padding: 12px;
+}
+.phone-mockup.iphone-16-pro .phone-frame .notch,
+.phone-mockup.iphone-16-pro-max .phone-frame .notch {
+  background-color: #000;
+  border-radius: 17px;
+  height: 34px;
+  left: 50%;
+  top: 20px;
+  transform: translateX(-50%);
+  width: 160px;
+  z-index: 3;
+}
+.phone-mockup.iphone-16-pro .phone-frame .camera,
+.phone-mockup.iphone-16-pro-max .phone-frame .camera {
+  display: none;
+}
+.phone-mockup.iphone-16-pro .phone-frame .home-indicator,
+.phone-mockup.iphone-16-pro-max .phone-frame .home-indicator {
+  background: #fff;
+}
+.phone-mockup.iphone-16-pro .phone-frame .volume-up,
+.phone-mockup.iphone-16-pro-max .phone-frame .volume-up {
+  background-color: #333;
+  border-radius: 4px;
+  height: 40px;
+  left: -5px;
+  top: 105px;
+  width: 8px;
+  z-index: 4;
+}
+.phone-mockup.iphone-16-pro .phone-frame .volume-down,
+.phone-mockup.iphone-16-pro-max .phone-frame .volume-down {
+  background-color: #333;
+  border-radius: 4px;
+  height: 40px;
+  left: -5px;
+  top: 155px;
+  width: 8px;
+  z-index: 4;
+}
+.phone-mockup.iphone-16-pro .phone-frame .power-button,
+.phone-mockup.iphone-16-pro-max .phone-frame .power-button {
+  background-color: #333;
+  border-radius: 4px;
+  height: 60px;
+  right: -5px;
+  top: 130px;
+  width: 8px;
+  z-index: 4;
+}
+.phone-mockup.iphone-16-pro .phone-frame .screen,
+.phone-mockup.iphone-16-pro-max .phone-frame .screen {
+  border-radius: 32px;
+}
+
+/* Pro Max fixed: 430×932pt (force size via wrapper if library does not emit pro-max class) */
+.phone-mockup.iphone-16-pro-max,
+.device-preview-pro-max .phone-mockup {
+  height: 932px;
+  width: 430px;
+}

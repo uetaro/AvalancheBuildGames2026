@@ -1,15 +1,16 @@
 import { useNavigate } from "react-router";
-import { ChevronRight, User, Calendar, ArrowRight, Bed, CreditCard } from "lucide-react";
+import { ChevronRight, User, Calendar, ArrowRight } from "lucide-react";
+import logoImg from "figma:asset/logo.png";
 import { motion } from "motion/react";
 import { useEffect, useState } from "react";
-import kudosIcon from "figma:asset/f4bf621b3ae64967e30c73582c7e028cfa4590e9.png";
-import kudosBadgeImg from "figma:asset/d13c169a55630b616ca2bbf29b05b5269d82cbb9.png";
+import kudosIcon from "figma:asset/kudos.png";
+import kudosBadgeImg from "figma:asset/kudos.png";
 
 const pageTransition = {
   initial: { opacity: 0, x: 20 },
   animate: { opacity: 1, x: 0 },
   exit: { opacity: 0, x: -20 },
-  transition: { duration: 0.3, ease: "easeInOut" }
+  transition: { duration: 0.3, ease: "easeInOut" as const }
 };
 
 interface StayData {
@@ -27,21 +28,40 @@ export function HomePage() {
   const navigate = useNavigate();
   const [stayData, setStayData] = useState<StayData | null>(null);
   const [remainingQuota, setRemainingQuota] = useState(3);
+  const [totalQuota, setTotalQuota] = useState(3);
 
-  useEffect(() => {
-    // Load stay data from localStorage
+  const loadQuotaAndStay = () => {
     const storedStayData = localStorage.getItem("stay_data");
     const storedQuota = localStorage.getItem("remaining_quota");
-    
+    const storedRules = localStorage.getItem("rules_snapshot");
+
     if (storedStayData) {
-      const parsed = JSON.parse(storedStayData);
-      console.log("Stay data from API:", JSON.stringify(parsed, null, 2));
-      setStayData(parsed);
+      try { setStayData(JSON.parse(storedStayData)); } catch {}
     }
-    
     if (storedQuota) {
       setRemainingQuota(parseInt(storedQuota, 10));
     }
+    if (storedRules) {
+      try {
+        const rules = JSON.parse(storedRules);
+        if (rules.kudos_quota !== undefined) setTotalQuota(rules.kudos_quota);
+      } catch {}
+    }
+  };
+
+  useEffect(() => {
+    loadQuotaAndStay();
+
+    const onFocus = () => loadQuotaAndStay();
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") loadQuotaAndStay();
+    };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
   }, []);
 
   // Format check-in date
@@ -74,7 +94,7 @@ export function HomePage() {
       {...pageTransition}
     >
       {/* Header - Simplified */}
-      <header className="relative bg-primary text-primary-foreground">
+      <header className="relative bg-primary text-primary-foreground pt-10 pb-2">
         <div className="absolute inset-0 opacity-[0.02]" style={{
           backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
         }} />
@@ -128,7 +148,7 @@ export function HomePage() {
                 <div className="relative">
                   <div className="flex items-baseline gap-1.5 mb-1">
                     <span className="text-4xl text-white font-light leading-none">{remainingQuota}</span>
-                    <span className="text-sm text-white/40 font-light">/ {3}</span>
+                    <span className="text-sm text-white/40 font-light">/ {totalQuota}</span>
                   </div>
                   <p className="text-xs text-white/60 font-light tracking-wide">Kudos Available</p>
                 </div>
@@ -140,56 +160,92 @@ export function HomePage() {
 
       {/* Main Content */}
       <main className="flex-1 p-6 max-w-md mx-auto w-full">
-        {/* Card Info Section (from design) */}
+        {/* Card Info Section — credit-card style */}
         {stayData && (
-          <div className="bg-white border border-border rounded-none p-5 shadow-sm mb-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 bg-primary rounded-none flex items-center justify-center">
-                <Bed className="w-6 h-6 text-white" />
+          <motion.div
+            className="relative w-full mb-6 overflow-hidden rounded-2xl shadow-2xl select-none"
+            style={{
+              aspectRatio: "1.586",
+              background: "linear-gradient(135deg, #0d2137 0%, #0a1929 50%, #081a33 100%)",
+            }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            {/* Subtle grid pattern */}
+            <div
+              className="absolute inset-0 opacity-[0.04]"
+              style={{
+                backgroundImage:
+                  "repeating-linear-gradient(0deg,transparent,transparent 39px,rgba(255,255,255,1) 39px,rgba(255,255,255,1) 40px),repeating-linear-gradient(90deg,transparent,transparent 39px,rgba(255,255,255,1) 39px,rgba(255,255,255,1) 40px)",
+              }}
+            />
+            {/* Glossy sheen */}
+            <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-transparent" />
+
+            {/* Top row: logo placeholder + room */}
+            <div className="absolute top-5 left-5 right-5 flex items-start justify-between">
+              {/* Brand logo / chip area */}
+              <div className="w-10 h-10 rounded-lg overflow-hidden bg-white/10 flex items-center justify-center border border-white/20">
+                <img src={logoImg} alt="Heartel" className="w-7 h-7 object-contain" />
               </div>
-              <div>
-                <h3 className="text-lg text-foreground font-light">Room {stayData.room_code}</h3>
+
+              {/* Room number */}
+              <div className="text-right">
+                <p className="text-accent text-base font-semibold tracking-wide leading-none">
+                  Room {stayData.room_code}
+                </p>
                 {stayData.room_label && (
-                  <p className="text-sm text-muted-foreground font-light">{stayData.room_label}</p>
+                  <p className="text-white/40 text-xs mt-0.5 font-light">{stayData.room_label}</p>
                 )}
               </div>
             </div>
-            
-            {/* Card UID Display */}
-            <div className="bg-primary/95 text-primary-foreground p-4 rounded-none mb-4">
-              <div className="flex items-center gap-2 mb-2">
-                <CreditCard className="w-4 h-4 text-accent" />
-                <span className="text-xs font-light text-white/70">Checked-in Card</span>
-              </div>
-              <div className="text-xl font-light tracking-wider">
-                {formatCardUid(stayData.card_uid)}
-              </div>
-            </div>
 
-            {/* Check-in Info */}
-            <div className="flex items-center gap-2 text-sm text-muted-foreground pt-3 border-t border-border">
-              <Calendar className="w-4 h-4" />
-              <span className="font-light">Check-in:</span>
-              <span className="font-light">
-                {stayData.checkin_at && `${new Date(stayData.checkin_at).getFullYear()}/${formatCheckinDate(stayData.checkin_at)} ${formatCheckinTime(stayData.checkin_at)}`}
-              </span>
+
+            {/* Bottom section */}
+            <div className="absolute bottom-5 left-5 right-5">
+              <p className="text-white/40 text-[10px] font-light tracking-[0.18em] uppercase mb-1.5">
+                Card Number
+              </p>
+              <p className="text-white text-xl font-semibold tracking-[0.12em] leading-none mb-4">
+                {formatCardUid(stayData.card_uid)}
+              </p>
+
+              {/* Check-in row */}
+              <div className="flex items-center gap-1.5 text-white/40">
+                <Calendar className="w-3 h-3 flex-shrink-0" />
+                <span className="text-[10px] font-light tracking-wider">
+                  Check-in&nbsp;
+                  {stayData.checkin_at &&
+                    `${new Date(stayData.checkin_at).getFullYear()}/${formatCheckinDate(stayData.checkin_at)} ${formatCheckinTime(stayData.checkin_at)}`}
+                </span>
+              </div>
             </div>
-          </div>
+          </motion.div>
         )}
 
         {/* Primary Action */}
         <motion.button
-          onClick={() => navigate("/staff")}
-          className="w-full bg-accent text-accent-foreground py-8 px-8 mb-8 rounded-none shadow-lg hover:shadow-xl transition-all group relative overflow-hidden"
-          whileHover={{ y: -4 }}
-          whileTap={{ scale: 0.98 }}
+          onClick={() => remainingQuota > 0 && navigate("/staff")}
+          disabled={remainingQuota <= 0}
+          className={`w-full py-8 px-8 mb-8 rounded-none shadow-lg transition-all group relative overflow-hidden ${
+            remainingQuota <= 0
+              ? "bg-muted text-muted-foreground cursor-not-allowed opacity-60"
+              : "bg-kudos text-kudos-foreground hover:shadow-xl"
+          }`}
+          whileHover={remainingQuota > 0 ? { y: -4 } : undefined}
+          whileTap={remainingQuota > 0 ? { scale: 0.98 } : undefined}
         >
-          <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+          {remainingQuota > 0 && (
+            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+          )}
           <div className="relative flex items-center justify-between">
             <div className="text-left">
               <span className="block text-xl font-light mb-1">Send Kudos</span>
               <span className="block text-xs opacity-80 font-light">
-                Select staff member
+                {remainingQuota <= 0
+                  ? "No Kudos remaining for this stay"
+                  : "Select staff member"}
               </span>
             </div>
             <ArrowRight className="w-6 h-6 opacity-80 group-hover:opacity-100 group-hover:translate-x-2 transition-all" />

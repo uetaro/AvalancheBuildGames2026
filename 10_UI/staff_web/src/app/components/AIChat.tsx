@@ -9,7 +9,7 @@ interface Message {
 }
 
 interface AIChatProps {
-  context: 'company' | 'affiliation' | 'scout';
+  context: 'company' | 'affiliation' | 'scout' | 'analytics';
   onClose?: () => void;
 }
 
@@ -84,6 +84,20 @@ export function AIChat({ context, onClose }: AIChatProps) {
             tokyo: 'Top performers in Tokyo area: 1) Sakura Kimura (Restaurant Manager, 5.0 rating) - Perfect scores in friendliness and service. 2) Yuki Tanaka (Front Desk Manager, 4.9 rating) - Exceptional communication skills. 3) Mei Chen (Concierge Director, 4.9 rating) - Multilingual specialist with cultural expertise.',
           },
         };
+      case 'analytics':
+        return {
+          title: 'Analytics AI',
+          welcomeMessage: 'Hi! I can help you interpret analytics data, identify trends, and provide insights. What would you like to explore?',
+          suggestions: [
+            'Summarize this month\'s Kudos trends',
+            'Which department has the most activity?',
+            'Show top performing staff',
+            'Compare this week vs last week',
+          ],
+          mockResponses: {
+            default: 'I can help you analyze Kudos data, identify performance trends, and surface actionable insights. What specific metrics are you interested in?',
+          },
+        };
       default:
         return {
           title: 'AI Assistant',
@@ -115,21 +129,22 @@ export function AIChat({ context, onClose }: AIChatProps) {
     const responses = config.mockResponses;
 
     // Context-specific keyword matching
+    const r = responses as Record<string, string | undefined>;
     if (context === 'company') {
-      if (lowerMessage.includes('policy') || lowerMessage.includes('policies')) return responses.policy;
-      if (lowerMessage.includes('value') || lowerMessage.includes('values')) return responses.values;
-      if (lowerMessage.includes('benefit') || lowerMessage.includes('benefits')) return responses.benefits;
-      if (lowerMessage.includes('employee') || lowerMessage.includes('staff') || lowerMessage.includes('how many')) return responses.employees;
+      if (lowerMessage.includes('policy') || lowerMessage.includes('policies')) return r.policy ?? responses.default;
+      if (lowerMessage.includes('value') || lowerMessage.includes('values')) return r.values ?? responses.default;
+      if (lowerMessage.includes('benefit') || lowerMessage.includes('benefits')) return r.benefits ?? responses.default;
+      if (lowerMessage.includes('employee') || lowerMessage.includes('staff') || lowerMessage.includes('how many')) return r.employees ?? responses.default;
     } else if (context === 'affiliation') {
-      if (lowerMessage.includes('top') || lowerMessage.includes('performer') || lowerMessage.includes('best')) return responses.performers;
-      if (lowerMessage.includes('pending') || lowerMessage.includes('request') || lowerMessage.includes('approval')) return responses.pending;
-      if (lowerMessage.includes('distribution') || lowerMessage.includes('department')) return responses.distribution;
-      if (lowerMessage.includes('recent') || lowerMessage.includes('new') || lowerMessage.includes('addition')) return responses.additions;
+      if (lowerMessage.includes('top') || lowerMessage.includes('performer') || lowerMessage.includes('best')) return r.performers ?? responses.default;
+      if (lowerMessage.includes('pending') || lowerMessage.includes('request') || lowerMessage.includes('approval')) return r.pending ?? responses.default;
+      if (lowerMessage.includes('distribution') || lowerMessage.includes('department')) return r.distribution ?? responses.default;
+      if (lowerMessage.includes('recent') || lowerMessage.includes('new') || lowerMessage.includes('addition')) return r.additions ?? responses.default;
     } else if (context === 'scout') {
-      if (lowerMessage.includes('front desk') || lowerMessage.includes('reception')) return responses.frontdesk;
-      if (lowerMessage.includes('experience') || lowerMessage.includes('5 years') || lowerMessage.includes('veteran')) return responses.experience;
-      if (lowerMessage.includes('compare') || lowerMessage.includes('vs') || lowerMessage.includes('versus')) return responses.compare;
-      if (lowerMessage.includes('tokyo') || lowerMessage.includes('area') || lowerMessage.includes('location')) return responses.tokyo;
+      if (lowerMessage.includes('front desk') || lowerMessage.includes('reception')) return r.frontdesk ?? responses.default;
+      if (lowerMessage.includes('experience') || lowerMessage.includes('5 years') || lowerMessage.includes('veteran')) return r.experience ?? responses.default;
+      if (lowerMessage.includes('compare') || lowerMessage.includes('vs') || lowerMessage.includes('versus')) return r.compare ?? responses.default;
+      if (lowerMessage.includes('tokyo') || lowerMessage.includes('area') || lowerMessage.includes('location')) return r.tokyo ?? responses.default;
     }
 
     return responses.default;

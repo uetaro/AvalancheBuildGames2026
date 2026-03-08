@@ -1,7 +1,7 @@
 // Shared utilities, Supabase clients, and auth helpers
 import { createClient } from "npm:@supabase/supabase-js@2";
 
-// ── Route prefix (ops routes / staff_web 由来) ────────────────────────────────
+// ── Route prefix (ops routes from staff_web) ───────────────────────────────────
 export const ROUTE_PREFIX = "/make-server-20781d19";
 
 // ── Environment ──────────────────────────────────────────────────────────────

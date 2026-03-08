@@ -4,12 +4,11 @@ import { AlertCircle, CheckCircle, Info, ChevronDown, ChevronUp } from 'lucide-r
 import { supabase, serverUrl, authHeaders, authHeadersWithJson } from '../../lib/supabase';
 
 // ============================================================
-// テスト用ハードコード値
-// DB に insert した work_tag の work_tag_public_id を以下に設定してください。
-// work_tag_public_id は自動生成されるため、
-// デバッグパネルの「Fetch Tags」ボタンで取得できます。
+// Test: hardcoded work_tag_public_id from DB.
+// Set work_tag_public_id from an inserted work_tag here.
+// Get it via the debug panel "Fetch Tags" button if empty.
 // ============================================================
-const HARDCODED_WORK_TAG_PUBLIC_ID = ''; // ← DBから取得したwork_tag_public_idをここにペースト（空ならデバッグパネルから取得）
+const HARDCODED_WORK_TAG_PUBLIC_ID = ''; // Paste work_tag_public_id from DB, or leave empty to use debug panel
 
 interface WorkTapResponse {
   action: 'clockin' | 'clockout';
@@ -44,7 +43,7 @@ export default function WorkingStatus() {
   const [toast, setToast] = useState<Toast | null>(null);
   const [initialLoading, setInitialLoading] = useState(true);
 
-  // デバッグパネル
+  // Debug panel
   const [debugOpen, setDebugOpen] = useState(false);
   const [availableTags, setAvailableTags] = useState<WorkTag[]>([]);
   const [selectedTagId, setSelectedTagId] = useState(HARDCODED_WORK_TAG_PUBLIC_ID);
@@ -69,7 +68,7 @@ export default function WorkingStatus() {
     return session?.access_token || null;
   };
 
-  // 初期ロード: 現在の勤務状態を取得
+  // Initial load: fetch current work status
   const fetchWorkStatus = useCallback(async () => {
     try {
       const token = await getAccessToken();
@@ -105,7 +104,7 @@ export default function WorkingStatus() {
     fetchWorkTags();
   }, [fetchWorkStatus]);
 
-  // デバッグ: 利用可能なタグを取得
+  // Debug: fetch available work tags
   const fetchWorkTags = async () => {
     setTagsLoading(true);
     try {
@@ -135,7 +134,7 @@ export default function WorkingStatus() {
     }
   };
 
-  // NFCタップ（またはボタン押下）→ API呼び出し
+  // NFC tap (or button press) → call API
   const handleWorkTap = async () => {
     if (isAnimating || isLoading) return;
 

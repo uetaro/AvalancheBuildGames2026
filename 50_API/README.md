@@ -100,3 +100,16 @@ SUPABASE_URL=https://afyppqxnwbinjaoqikbw.supabase.co
 SUPABASE_ANON_KEY=<anon key>
 SUPABASE_SERVICE_ROLE_KEY=<service role key>
 ```
+
+## Edge Function のログについて
+
+「起動」「シャットダウン」が大量に出る場合、**pg_cron が毎分2回**（chain-worker-submit / confirm）Edge Function を呼んでいるためです。リクエストごとにインスタンスが起動・終了するため、ログが多くなります。
+
+**ログを減らす:** Supabase ダッシュボード → SQL Editor で以下を実行し、cron を 5 分間隔に変更してください。
+
+```sql
+-- Unschedule existing jobs, then re-register using 00_DOCUMENT/04_DATA/schema.sql Part 5 (or run Part 5 again with */5 * * * *)
+SELECT cron.unschedule('heartel-chain-worker-submit');
+SELECT cron.unschedule('heartel-chain-worker-confirm');
+-- Then run Part 5 of schema.sql again
+```

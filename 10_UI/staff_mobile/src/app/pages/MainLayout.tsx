@@ -1,14 +1,15 @@
 import { Outlet, useNavigate, useLocation } from 'react-router';
 import { useState, useEffect } from 'react';
 import { Heart, Briefcase, Coins, User } from 'lucide-react';
-import { supabase } from '../lib/supabase';
-import kudosIcon from 'figma:asset/d13c169a55630b616ca2bbf29b05b5269d82cbb9.png';
-import pointIcon from 'figma:asset/5560785a34694df91ca800dfb17c52f6abbe5399.png';
+import { supabase, serverUrl, authHeaders } from '../lib/supabase';
+import kudosIcon from 'figma:asset/kudos.png';
+import pointIcon from 'figma:asset/coin.png';
 
 export default function MainLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const [authChecked, setAuthChecked] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -16,6 +17,12 @@ export default function MainLayout() {
         navigate('/', { replace: true });
       } else {
         setAuthChecked(true);
+        fetch(`${serverUrl}/my-profile`, {
+          headers: authHeaders(session.access_token),
+        })
+          .then((r) => (r.ok ? r.json() : null))
+          .then((data) => { if (data?.avatar_url) setAvatarUrl(data.avatar_url); })
+          .catch(() => {});
       }
     });
   }, [navigate]);
@@ -39,36 +46,10 @@ export default function MainLayout() {
   }
 
   const tabs = [
-    { 
-      id: 'kudos', 
-      label: 'Kudos', 
-      icon: Heart,
-      color: '#FF6B6B',
-      path: '/app/kudos',
-      customIcon: kudosIcon
-    },
-    { 
-      id: 'work', 
-      label: 'Work', 
-      icon: Briefcase,
-      color: '#5BA5A5',
-      path: '/app/work'
-    },
-    { 
-      id: 'point', 
-      label: 'Point', 
-      icon: Coins,
-      color: '#C9A227',
-      path: '/app/point',
-      customIcon: pointIcon
-    },
-    { 
-      id: 'account', 
-      label: 'Account', 
-      icon: User,
-      color: '#D4A574',
-      path: '/app/account'
-    }
+    { id: 'kudos', label: 'Kudos', icon: Heart, color: '#FF6B6B', path: '/app/kudos' },
+    { id: 'work', label: 'Work', icon: Briefcase, color: '#5BA5A5', path: '/app/work' },
+    { id: 'point', label: 'Point', icon: Coins, color: '#C9A227', path: '/app/point' },
+    { id: 'account', label: 'Account', icon: User, color: '#D4A574', path: '/app/account' }
   ];
 
   const isActive = (path: string) => {
@@ -78,7 +59,7 @@ export default function MainLayout() {
   return (
     <div className="h-screen flex flex-col overflow-hidden" style={{ backgroundColor: '#FAFBFC', maxWidth: '480px', margin: '0 auto' }}>
       {/* Main Content */}
-      <div className="flex-1 overflow-y-auto pb-20">
+      <div className="flex-1 overflow-y-auto pb-20 scrollbar-hide">
         <Outlet />
       </div>
 
@@ -112,25 +93,36 @@ export default function MainLayout() {
                   />
                 )}
                 
-                {/* Icon */}
                 <div className="mb-1 relative">
-                  {tab.customIcon ? (
-                    <img 
-                      src={tab.customIcon} 
+                  {tab.id === 'kudos' ? (
+                    <img
+                      src={kudosIcon}
                       alt={tab.label}
                       className="w-7 h-7 transition-all object-contain"
-                      style={{ 
-                        opacity: active ? 1 : 0.5,
-                        filter: active ? 'none' : 'grayscale(50%)'
+                      style={{ opacity: active ? 1 : 0.5, filter: active ? 'none' : 'grayscale(50%)' }}
+                    />
+                  ) : tab.id === 'point' ? (
+                    <img
+                      src={pointIcon}
+                      alt={tab.label}
+                      className="w-7 h-7 transition-all object-contain"
+                      style={{ opacity: active ? 1 : 0.5, filter: active ? 'none' : 'grayscale(50%)' }}
+                    />
+                  ) : tab.id === 'account' && avatarUrl ? (
+                    <img
+                      src={avatarUrl}
+                      alt={tab.label}
+                      className="w-7 h-7 rounded-full object-cover transition-all"
+                      style={{
+                        opacity: active ? 1 : 0.6,
+                        filter: active ? 'none' : 'grayscale(40%)',
+                        boxShadow: active ? `0 0 0 2px ${tab.color}` : 'none',
                       }}
                     />
                   ) : (
-                    <Icon 
-                      size={26} 
-                      style={{ 
-                        color: active ? tab.color : '#9CA3AF',
-                        strokeWidth: active ? 2.5 : 2
-                      }}
+                    <Icon
+                      size={26}
+                      style={{ color: active ? tab.color : '#9CA3AF', strokeWidth: active ? 2.5 : 2 }}
                     />
                   )}
                 </div>

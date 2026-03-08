@@ -1,7 +1,7 @@
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { useState } from 'react';
-import pointIcon from 'figma:asset/5560785a34694df91ca800dfb17c52f6abbe5399.png';
-import kudosIcon from 'figma:asset/d13c169a55630b616ca2bbf29b05b5269d82cbb9.png';
+import pointIcon from 'figma:asset/coin.png';
+import kudosIcon from 'figma:asset/kudos.png';
 
 interface TodaysOverviewProps {
   role: 'staff' | 'manager';

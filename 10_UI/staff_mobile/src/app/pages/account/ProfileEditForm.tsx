@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { ArrowLeft, UserCircle, Check, Loader2, AlertCircle, ChevronDown, Globe, Users, Building2, Camera, Trash2, X } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { supabase, serverUrl, authHeaders, authHeadersWithJson } from '../../lib/supabase';
+import { ImageWithFallback } from '../../components/figma/ImageWithFallback';
 
 interface CompanyMemberProfile {
   company_member_id: string;
@@ -472,7 +473,7 @@ export default function ProfileEditForm() {
                 }}
               >
                 {displayAvatarSrc ? (
-                  <img
+                  <ImageWithFallback
                     src={displayAvatarSrc}
                     alt="Avatar"
                     className="w-full h-full object-cover"

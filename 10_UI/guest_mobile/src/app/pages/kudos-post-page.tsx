@@ -2,8 +2,11 @@ import { useNavigate, useParams, useLocation } from "react-router";
 import { ArrowLeft, Sparkles, Briefcase, HandHeart, Zap, Smile, Star, User, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import Lottie from "lottie-react";
+import ghostsmartAnimation from "./../../assets/Ghostsmart.json";
 import { projectId, publicAnonKey } from "/utils/supabase/info";
-import kudosIcon from "figma:asset/f4bf621b3ae64967e30c73582c7e028cfa4590e9.png";
+import kudosIcon from "figma:asset/kudos.png";
+import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 
 interface KudosCategory {
   id: string;
@@ -39,6 +42,7 @@ export function KudosPostPage() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
+  const [moderationSuggestion, setModerationSuggestion] = useState<string | null>(null);
 
   // Read staff data from navigation state, with sessionStorage fallback
   const staffState = location.state as {
@@ -74,6 +78,7 @@ export function KudosPostPage() {
   const handleSubmit = () => {
     if (!selectedCategory || !message.trim()) return;
     setSendError(null);
+    setModerationSuggestion(null);
     setShowConfirm(true);
   };
 
@@ -110,7 +115,16 @@ export function KudosPostPage() {
 
       if (!res.ok) {
         console.error("Kudos send error:", data);
-        // Map known error codes to user-friendly messages
+
+        if (data.error_code === "CONTENT_MODERATION_FAILED") {
+          const suggestion = data.details?.suggestion ?? data.message ?? "Could you revise your message a little?";
+          setModerationSuggestion(suggestion);
+          setShowConfirm(false);
+          setSendError("Unable to send your Kudos.");
+          setIsSending(false);
+          return;
+        }
+
         const errorMessages: Record<string, string> = {
           QUOTA_EXCEEDED: "You've reached the maximum number of Kudos for this stay.",
           COOLDOWN_ACTIVE: "Please wait a moment before sending another Kudos.",
@@ -126,8 +140,11 @@ export function KudosPostPage() {
         return;
       }
 
-      // Navigate to processing page, then complete
-      navigate("/kudos/processing", {
+      if (data.remaining_quota !== undefined) {
+        localStorage.setItem("remaining_quota", String(data.remaining_quota));
+      }
+
+      navigate("/kudos/complete", {
         replace: true,
         state: {
           kudos_id: data.kudos_id,
@@ -187,10 +204,10 @@ export function KudosPostPage() {
             <div className="flex items-center gap-4">
               <div className="flex-shrink-0">
                 {staffImageUrl ? (
-                  <img
+                  <ImageWithFallback
                     src={staffImageUrl}
                     alt={`${staffDisplayName}'s avatar`}
-                    className="w-16 h-16 rounded-none bg-primary/10 ring-2 ring-accent/20"
+                    className="w-16 h-16 rounded-none bg-primary/10 ring-2 ring-accent/20 object-cover"
                   />
                 ) : (
                   <div className="w-16 h-16 rounded-none bg-primary/10 ring-2 ring-accent/20 flex items-center justify-center">
@@ -220,7 +237,7 @@ export function KudosPostPage() {
           transition={{ duration: 0.5, delay: 0.1 }}
         >
           <label className="block text-xs text-muted-foreground font-light mb-3 uppercase tracking-wider">
-            Category <span className="text-[#FF6B6B]">*</span>
+            Category <span className="text-accent">*</span>
           </label>
           <div className="grid grid-cols-3 gap-3">
             {categories.map((category, index) => {
@@ -229,7 +246,7 @@ export function KudosPostPage() {
               return (
                 <motion.button
                   key={category.id}
-                  onClick={() => setSelectedCategory(category.id)}
+                  onClick={() => { setSelectedCategory(category.id); setModerationSuggestion(null); }}
                   className={`p-4 rounded-none border transition-all text-center relative overflow-hidden ${
                     isSelected
                       ? "border-accent bg-accent/5 shadow-sm"
@@ -264,12 +281,12 @@ export function KudosPostPage() {
           transition={{ duration: 0.5, delay: 0.2 }}
         >
           <label className="block text-xs text-muted-foreground font-light mb-3 uppercase tracking-wider">
-            Message <span className="text-[#FF6B6B]">*</span>
+            Message <span className="text-accent">*</span>
           </label>
           <div className="relative">
             <textarea
               value={message}
-              onChange={(e) => setMessage(e.target.value)}
+              onChange={(e) => { setMessage(e.target.value); setModerationSuggestion(null); }}
               placeholder="Share your gratitude..."
               maxLength={500}
               rows={6}
@@ -280,6 +297,31 @@ export function KudosPostPage() {
             </div>
           </div>
         </motion.div>
+
+        {/* Moderation Feedback */}
+        <AnimatePresence>
+          {(sendError || moderationSuggestion) && sendError === "Unable to send your Kudos." && (
+            <motion.div
+              className="mb-6 bg-destructive/5 border border-destructive/20 rounded-none p-5"
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.3 }}
+            >
+              <div className="flex gap-3">
+                <Sparkles className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-foreground mb-2">{sendError}</p>
+                  {moderationSuggestion && (
+                    <p className="text-xs text-muted-foreground font-light leading-relaxed">
+                      {moderationSuggestion}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Info Box */}
         <motion.div 
@@ -389,6 +431,29 @@ export function KudosPostPage() {
               </motion.div>
             </div>
           </>
+        )}
+      </AnimatePresence>
+
+      {/* Fullscreen loading overlay during API call */}
+      <AnimatePresence>
+        {isSending && (
+          <motion.div
+            className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background/95 backdrop-blur-md"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <div className="w-48 h-48">
+              <Lottie
+                animationData={ghostsmartAnimation}
+                loop
+              />
+            </div>
+            <p className="mt-4 text-sm text-muted-foreground font-light">
+              Checking your post...
+            </p>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

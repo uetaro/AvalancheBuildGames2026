@@ -3,12 +3,13 @@ import { ArrowLeft, Search, Loader2, RefreshCw, UserX, User } from "lucide-react
 import { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import { projectId, publicAnonKey } from "/utils/supabase/info";
+import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 
 const pageTransition = {
   initial: { opacity: 0, x: 20 },
   animate: { opacity: 1, x: 0 },
   exit: { opacity: 0, x: -20 },
-  transition: { duration: 0.3, ease: "easeInOut" }
+  transition: { duration: 0.3, ease: "easeInOut" as const }
 };
 
 interface StaffItem {
@@ -29,6 +30,10 @@ export function StaffListPage() {
   const [loadingState, setLoadingState] = useState<LoadingState>("loading");
   const [errorMessage, setErrorMessage] = useState("");
   const [jobTitles, setJobTitles] = useState<string[]>([]);
+
+  const storedQuota = localStorage.getItem("remaining_quota");
+  const remainingQuota = storedQuota ? parseInt(storedQuota, 10) : 0;
+  const quotaExhausted = remainingQuota <= 0;
 
   const fetchStaffList = async () => {
     setLoadingState("loading");
@@ -132,7 +137,7 @@ export function StaffListPage() {
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMDMpIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-40" />
 
         <div className="relative max-w-md mx-auto">
-          <div className="flex items-center gap-4 px-6 pt-5 pb-4">
+          <div className="flex items-center gap-4 px-6 pt-12 pb-4">
             <motion.button
               onClick={() => navigate("/home")}
               className="p-2 -ml-2 hover:bg-white/10 rounded-none transition-colors"
@@ -251,6 +256,14 @@ export function StaffListPage() {
         {/* Success State */}
         {loadingState === "success" && (
           <>
+            {quotaExhausted && (
+              <div className="bg-muted/60 border border-border rounded-none p-4 mb-4">
+                <p className="text-sm text-muted-foreground font-light text-center">
+                  You've used all your Kudos for this stay.
+                </p>
+              </div>
+            )}
+
             <p className="text-xs text-muted-foreground font-light mb-4 px-1 uppercase tracking-wider">
               {filteredStaff.length} On-Duty Staff{" "}
               {filteredStaff.length === 1 ? "Member" : "Members"}
@@ -261,8 +274,9 @@ export function StaffListPage() {
               {filteredStaff.map((staff, index) => (
                 <motion.button
                   key={staff.company_member_id}
+                  disabled={quotaExhausted}
                   onClick={() =>
-                    navigate(`/kudos/${staff.company_member_id}`, {
+                    !quotaExhausted && navigate(`/kudos/${staff.company_member_id}`, {
                       state: {
                         display_name: staff.display_name,
                         job_title: staff.job_title,
@@ -271,18 +285,22 @@ export function StaffListPage() {
                       },
                     })
                   }
-                  className="w-full bg-white border border-border rounded-none hover:border-accent/40 hover:shadow-lg transition-all text-left group overflow-hidden"
+                  className={`w-full bg-white border border-border rounded-none transition-all text-left group overflow-hidden ${
+                    quotaExhausted
+                      ? "opacity-50 cursor-not-allowed"
+                      : "hover:border-accent/40 hover:shadow-lg"
+                  }`}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3, delay: index * 0.05 }}
-                  whileTap={{ scale: 0.98 }}
+                  whileTap={quotaExhausted ? undefined : { scale: 0.98 }}
                 >
                   <div className="flex gap-4 items-center p-4">
                     {/* Avatar Placeholder */}
                     <div className="flex-shrink-0">
                       <div className="w-14 h-14 rounded-none overflow-hidden bg-primary/10 ring-2 ring-accent/10 group-hover:ring-accent/30 transition-all flex items-center justify-center">
                         {staff.profile_image_url ? (
-                          <img
+                          <ImageWithFallback
                             src={staff.profile_image_url}
                             alt=""
                             className="w-full h-full object-cover"
