@@ -486,4 +486,94 @@ kudosStaff.get("/my-exchange-history", async (c) => {
   }
 });
 
+// GET /my-career-history — work history with on-chain verification status
+kudosStaff.get("/my-career-history", async (c) => {
+  try {
+    const auth = await getAuthUser(c);
+    if (!auth)
+      return c.json({ error_code: "UNAUTHORIZED", message: "Authentication required" }, 401);
+
+    const supabase = createServiceClient();
+
+    // All company_member records (active + ended) for this user
+    const { data: memberships, error: memberErr } = await supabase
+      .from("company_member")
+      .select(`
+        company_member_id,
+        company_id,
+        member_role,
+        member_status,
+        job_title,
+        created_at,
+        ended_at,
+        company:company_id ( company_name, company_logo_url, company_city, company_region )
+      `)
+      .eq("user_id", auth.userId)
+      .order("created_at", { ascending: false });
+
+    if (memberErr)
+      return c.json({ error_code: "INTERNAL_ERROR", message: `Query error: ${memberErr.message}` }, 500);
+
+    if (!memberships || memberships.length === 0) {
+      return c.json({ history: [] });
+    }
+
+    // Get chain_affiliation status for each membership
+    const memberIds = memberships.map((m: any) => m.company_member_id);
+    const { data: chainData } = await supabase
+      .from("chain_affiliation")
+      .select("company_member_id, receipt_status, tx_hash, anchor_hash, confirmed_at, chain_id")
+      .in("company_member_id", memberIds);
+
+    const chainMap: Record<string, any> = {};
+    for (const ch of (chainData || [])) {
+      chainMap[ch.company_member_id] = ch;
+    }
+
+    // Count kudos received at each company
+    const { data: kudosCounts } = await supabase
+      .from("kudos")
+      .select("receiver_company_member_id")
+      .in("receiver_company_member_id", memberIds)
+      .in("kudos_status", ["confirmed", "pending"]);
+
+    const kudosCountMap: Record<string, number> = {};
+    for (const k of (kudosCounts || [])) {
+      kudosCountMap[k.receiver_company_member_id] = (kudosCountMap[k.receiver_company_member_id] || 0) + 1;
+    }
+
+    const history = memberships.map((m: any) => {
+      const chain = chainMap[m.company_member_id] || null;
+      const company = m.company as any;
+      return {
+        company_member_id: m.company_member_id,
+        company_id: m.company_id,
+        company_name: company?.company_name || "Unknown",
+        company_logo_url: company?.company_logo_url || null,
+        company_location: [company?.company_city, company?.company_region].filter(Boolean).join(", ") || null,
+        member_role: m.member_role,
+        member_status: m.member_status,
+        job_title: m.job_title,
+        started_at: m.created_at,
+        ended_at: m.ended_at,
+        kudos_count: kudosCountMap[m.company_member_id] || 0,
+        on_chain: chain ? {
+          status: chain.receipt_status,
+          tx_hash: chain.tx_hash,
+          anchor_hash: chain.anchor_hash,
+          confirmed_at: chain.confirmed_at,
+          chain_id: chain.chain_id,
+          explorer_url: chain.tx_hash
+            ? `https://testnet.snowtrace.io/tx/${chain.tx_hash}`
+            : null,
+        } : null,
+      };
+    });
+
+    return c.json({ history });
+  } catch (err) {
+    return c.json({ error_code: "INTERNAL_ERROR", message: `Unexpected error: ${err}` }, 500);
+  }
+});
+
 export default kudosStaff;

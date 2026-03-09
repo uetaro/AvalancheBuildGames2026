@@ -10,7 +10,12 @@
     "dev": "tsc --watch",
     "example": "tsx src/example.ts"
   },
-  "keywords": ["avalanche", "blockchain", "c-chain", "evm"],
+  "keywords": [
+    "avalanche",
+    "blockchain",
+    "c-chain",
+    "evm"
+  ],
   "license": "UNLICENSED",
   "engines": {
     "node": ">=20.0.0"
@@ -19,9 +24,13 @@
     "@avalanche-sdk/client": "^0.1.1"
   },
   "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^7.0.0",
+    "@openzeppelin/contracts": "^5.6.1",
     "@types/node": "^20.10.0",
     "dotenv": "^16.3.0",
+    "hardhat": "^3.1.11",
     "tsx": "^4.7.0",
     "typescript": "^5.3.0"
-  }
+  },
+  "author": ""
 }

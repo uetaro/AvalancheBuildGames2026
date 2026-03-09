@@ -302,7 +302,45 @@ CREATE TABLE IF NOT EXISTS chain_receipt (
 );
 
 -- -----------------------------------------------------------------------------
--- 16. audit_log
+-- 16. chain_affiliation (on-chain proof of staff ↔ company linkage)
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS chain_affiliation (
+  chain_affiliation_id uuid         NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+  company_member_id    uuid         NOT NULL REFERENCES company_member (company_member_id),
+  company_id           uuid         NOT NULL REFERENCES company (company_id),
+  user_id              uuid         NOT NULL REFERENCES "user" (user_id),
+  chain_name           text         NOT NULL DEFAULT 'avalanche-fuji',
+  anchor_hash          text         NOT NULL,
+  company_hash         text         NOT NULL,
+  staff_hash           text         NOT NULL,
+  tx_hash              text,
+  receipt_status       text         NOT NULL DEFAULT 'queued',
+  submitted_at         timestamptz,
+  confirmed_at         timestamptz,
+  fail_reason          text,
+  retry_count          integer      NOT NULL DEFAULT 0,
+  next_attempt_at      timestamptz,
+  last_attempt_at      timestamptz,
+  tx_error             text,
+  chain_id             integer      NOT NULL DEFAULT 43113,
+  contract_address     text,
+  hash_alg             text         NOT NULL DEFAULT 'keccak256',
+  version              integer      NOT NULL DEFAULT 1,
+  created_at           timestamptz  NOT NULL DEFAULT now(),
+  updated_at           timestamptz  NOT NULL DEFAULT now(),
+  CONSTRAINT uq_chain_affiliation_member UNIQUE (company_member_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_chain_affiliation_worker_submit
+  ON chain_affiliation (receipt_status, next_attempt_at, created_at)
+  WHERE receipt_status IN ('queued', 'failed');
+
+CREATE INDEX IF NOT EXISTS idx_chain_affiliation_worker_confirm
+  ON chain_affiliation (receipt_status, confirmed_at)
+  WHERE receipt_status = 'submitted';
+
+-- -----------------------------------------------------------------------------
+-- 18. audit_log
 -- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS audit_log (
   audit_log_id            uuid         NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -319,7 +357,7 @@ CREATE TABLE IF NOT EXISTS audit_log (
 );
 
 -- -----------------------------------------------------------------------------
--- 17. point_exchange (staff point exchange history)
+-- 19. point_exchange (staff point exchange history)
 -- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS point_exchange (
   exchange_id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -480,34 +518,45 @@ FROM (VALUES
 CREATE EXTENSION IF NOT EXISTS pg_cron;
 CREATE EXTENSION IF NOT EXISTS pg_net;
 
-DO $$
-DECLARE
-  v_project_url  TEXT := 'https://<your-project-ref>.supabase.co';
-  v_service_key  TEXT := '<your-service-role-key>';
-  v_submit_url   TEXT;
-  v_confirm_url  TEXT;
-BEGIN
-  v_submit_url  := v_project_url || '/functions/v1/api/chain-worker-submit';
-  v_confirm_url := v_project_url || '/functions/v1/api/chain-worker-confirm';
+-- Replace <PROJECT_REF> and <SERVICE_ROLE_KEY> with actual values before running.
+-- Run each SELECT separately in Supabase SQL Editor.
 
-  PERFORM cron.schedule(
-    'heartel-chain-worker-submit',
-    '*/5 * * * *',
-    format(
-      $$ SELECT net.http_post(url := %L, headers := jsonb_build_object('Content-Type', 'application/json', 'Authorization', 'Bearer ' || %L), body := '{}'::jsonb); $$,
-      v_submit_url, v_service_key
-    )
-  );
+SELECT cron.schedule(
+  'heartel-chain-worker-submit',
+  '*/5 * * * *',
+  $$SELECT net.http_post(
+    url := 'https://<PROJECT_REF>.supabase.co/functions/v1/api/chain-worker-submit',
+    headers := '{"Content-Type":"application/json","Authorization":"Bearer <SERVICE_ROLE_KEY>"}'::jsonb,
+    body := '{}'::jsonb
+  );$$
+);
 
-  PERFORM cron.schedule(
-    'heartel-chain-worker-confirm',
-    '*/5 * * * *',
-    format(
-      $$ SELECT net.http_post(url := %L, headers := jsonb_build_object('Content-Type', 'application/json', 'Authorization', 'Bearer ' || %L), body := '{}'::jsonb); $$,
-      v_confirm_url, v_service_key
-    )
-  );
+SELECT cron.schedule(
+  'heartel-chain-worker-confirm',
+  '*/5 * * * *',
+  $$SELECT net.http_post(
+    url := 'https://<PROJECT_REF>.supabase.co/functions/v1/api/chain-worker-confirm',
+    headers := '{"Content-Type":"application/json","Authorization":"Bearer <SERVICE_ROLE_KEY>"}'::jsonb,
+    body := '{}'::jsonb
+  );$$
+);
 
-  RAISE NOTICE 'Cron jobs registered: heartel-chain-worker-submit / heartel-chain-worker-confirm';
-END;
-$$;
+SELECT cron.schedule(
+  'heartel-chain-affiliation-submit',
+  '*/5 * * * *',
+  $$SELECT net.http_post(
+    url := 'https://<PROJECT_REF>.supabase.co/functions/v1/api/chain-worker-affiliation-submit',
+    headers := '{"Content-Type":"application/json","Authorization":"Bearer <SERVICE_ROLE_KEY>"}'::jsonb,
+    body := '{}'::jsonb
+  );$$
+);
+
+SELECT cron.schedule(
+  'heartel-chain-affiliation-confirm',
+  '*/5 * * * *',
+  $$SELECT net.http_post(
+    url := 'https://<PROJECT_REF>.supabase.co/functions/v1/api/chain-worker-affiliation-confirm',
+    headers := '{"Content-Type":"application/json","Authorization":"Bearer <SERVICE_ROLE_KEY>"}'::jsonb,
+    body := '{}'::jsonb
+  );$$
+);

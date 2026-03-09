@@ -5,8 +5,8 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
  * @title ReceiptRegistry
- * @notice Heartel — チェックアウト時の Kudos 受領証をオンチェーンに記録する最小コントラクト。
- *         設計書 DD-OPS-CHECKOUT-ONCHAIN §4 準拠。
+ * @notice Heartel — Kudos 受領証およびスタッフ所属（Affiliation）証跡を
+ *         オンチェーンに記録する最小コントラクト。
  *
  * デプロイ先: Avalanche Fuji Testnet (ChainId=43113)
  *             本番は Avalanche C-Chain (ChainId=43114)
@@ -22,20 +22,19 @@ contract ReceiptRegistry is Ownable {
     error AlreadyRecorded(bytes32 anchorHash);
     error NotIssuer(address caller);
 
-    // ── データ構造 ────────────────────────────────────────────────────────────
+    // ═══════════════════════════════════════════════════════════════════════════
+    // Kudos Receipt
+    // ═══════════════════════════════════════════════════════════════════════════
+
     struct Receipt {
-        uint32  points;     // 付与ポイント
-        uint64  issuedAt;   // block.timestamp（Unix 秒）
-        address issuer;     // 発行者アドレス（= issuer ウォレット）
+        uint32  points;
+        uint64  issuedAt;
+        address issuer;
     }
 
-    // anchorHash → Receipt（anchorHash が存在しない場合 issuer == address(0)）
     mapping(bytes32 => Receipt) public receipts;
-
-    // 発行権限を持つアドレス一覧
     mapping(address => bool) public issuers;
 
-    // ── イベント ──────────────────────────────────────────────────────────────
     event ReceiptRecorded(
         bytes32 indexed anchorHash,
         uint32  points,
@@ -43,6 +42,27 @@ contract ReceiptRegistry is Ownable {
         uint64  issuedAt
     );
     event IssuerUpdated(address indexed issuer, bool allowed);
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // Affiliation (staff ↔ company linkage proof)
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    struct Affiliation {
+        bytes32 companyHash;   // keccak256(company_id)
+        bytes32 staffHash;     // keccak256(user_id)
+        uint64  affiliatedAt;  // block.timestamp
+        address issuer;
+    }
+
+    mapping(bytes32 => Affiliation) public affiliations;
+
+    event AffiliationRecorded(
+        bytes32 indexed anchorHash,
+        bytes32 indexed companyHash,
+        bytes32 indexed staffHash,
+        address issuer,
+        uint64  affiliatedAt
+    );
 
     // ── 修飾子 ────────────────────────────────────────────────────────────────
     modifier onlyIssuer() {
@@ -60,19 +80,17 @@ contract ReceiptRegistry is Ownable {
 
     // ── 管理関数 ──────────────────────────────────────────────────────────────
 
-    /**
-     * @notice 発行者アドレスの権限を付与または剥奪する（owner のみ）
-     */
     function setIssuer(address issuer, bool allowed) external onlyOwner {
         issuers[issuer] = allowed;
         emit IssuerUpdated(issuer, allowed);
     }
 
-    // ── メイン関数 ────────────────────────────────────────────────────────────
+    // ═══════════════════════════════════════════════════════════════════════════
+    // Kudos Receipt — メイン関数
+    // ═══════════════════════════════════════════════════════════════════════════
 
     /**
-     * @notice Kudos 受領証をオンチェーンに記録する。
-     *         同じ anchorHash は 1 度しか記録できない（冪等）。
+     * @notice Kudos 受領証をオンチェーンに記録する（冪等）。
      * @param anchorHash keccak256(abi.encode(SCHEMA_ID, kudos_uuid, stay_uuid, ...))
      * @param points     付与した制度ポイント
      */
@@ -91,18 +109,10 @@ contract ReceiptRegistry is Ownable {
         emit ReceiptRecorded(anchorHash, points, msg.sender, r.issuedAt);
     }
 
-    // ── ビュー関数 ────────────────────────────────────────────────────────────
-
-    /**
-     * @notice anchorHash がすでに記録済みか確認する（冪等チェック・検証 UI 用）
-     */
     function isRecorded(bytes32 anchorHash) external view returns (bool) {
         return receipts[anchorHash].issuer != address(0);
     }
 
-    /**
-     * @notice 記録済みレシートの詳細を返す（検証 UI 用）
-     */
     function getReceipt(bytes32 anchorHash)
         external
         view
@@ -110,5 +120,49 @@ contract ReceiptRegistry is Ownable {
     {
         Receipt memory r = receipts[anchorHash];
         return (r.points, r.issuedAt, r.issuer);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // Affiliation — メイン関数
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    /**
+     * @notice スタッフと会社の所属関係をオンチェーンに記録する（冪等）。
+     *         第三者が「この人はこの会社に所属していた」ことを検証可能にする。
+     * @param anchorHash  keccak256(abi.encode(SCHEMA_ID, company_member_id, company_id, user_id))
+     * @param companyHash keccak256(company_id) — 会社を特定するハッシュ
+     * @param staffHash   keccak256(user_id)    — スタッフを特定するハッシュ
+     */
+    function recordAffiliation(
+        bytes32 anchorHash,
+        bytes32 companyHash,
+        bytes32 staffHash
+    ) external onlyIssuer {
+        if (affiliations[anchorHash].issuer != address(0)) {
+            revert AlreadyRecorded(anchorHash);
+        }
+
+        Affiliation memory a = Affiliation({
+            companyHash:  companyHash,
+            staffHash:    staffHash,
+            affiliatedAt: uint64(block.timestamp),
+            issuer:       msg.sender
+        });
+
+        affiliations[anchorHash] = a;
+        emit AffiliationRecorded(anchorHash, companyHash, staffHash, msg.sender, a.affiliatedAt);
+    }
+
+    function isAffiliationRecorded(bytes32 anchorHash) external view returns (bool) {
+        return affiliations[anchorHash].issuer != address(0);
+    }
+
+    function getAffiliation(bytes32 anchorHash)
+        external
+        view
+        returns (bytes32 companyHash, bytes32 staffHash, uint64 affiliatedAt, address issuer)
+    {
+        Affiliation memory a = affiliations[anchorHash];
+        return (a.companyHash, a.staffHash, a.affiliatedAt, a.issuer);
     }
 }

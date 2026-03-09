@@ -74,3 +74,62 @@
 | **pg_cron** | submit / confirm を**定期的に**実行するためのトリガー。手動で叩かずに運用するため。 |
 
 「送信した瞬間に証跡を約束する（キューに入れる）」＋「送信・確定は非同期で確実にやる（worker＋cron）」という仕様・運用の流れになっている。
+
+---
+
+## 7. Affiliation（所属）もオンチェーンに記録する理由
+
+### なぜ所属関係を記録するのか
+
+- キャリア証明の根幹：「この人はこの会社で働いていた」という事実は、履歴書のベースになる。
+- DB だけでは、管理者が後から「在籍していなかった」と書き換えられる余地がある。
+- ブロックチェーンに「所属開始」の証跡を載せておけば、**第三者が検証可能な職歴証明**になる。
+- 本人情報は載せず、**ハッシュ（company_hash, staff_hash）だけ**をオンチェーンに記録する。
+
+### 何を記録するのか
+
+| フィールド | 内容 |
+|-----------|------|
+| **anchorHash** | `keccak256(affiliation:{company_member_id}:{company_id}:{user_id})` — 一意な所属証跡ハッシュ |
+| **companyHash** | `keccak256(company_id)` — 会社を特定するハッシュ |
+| **staffHash** | `keccak256(user_id)` — スタッフを特定するハッシュ |
+
+### 運用の流れ
+
+```
+[マネージャー] Affiliation リクエストを承認
+    ↓
+[API] ・company_member を作成（or 再有効化）
+      ・chain_affiliation を 1 件追加（receipt_status = queued）
+      ・承認完了レスポンスを返す
+    ↓
+[pg_cron] 定期的に chain-worker-affiliation-submit を呼ぶ（5分ごと）
+    ↓
+[chain-worker-affiliation-submit]
+      ・queued の chain_affiliation を最大5件取得
+      ・Avalanche に recordAffiliation(anchor_hash, company_hash, staff_hash) を送信
+      ・tx_hash を保存し、receipt_status = submitted に更新
+    ↓
+[pg_cron] 定期的に chain-worker-affiliation-confirm を呼ぶ（5分ごと）
+    ↓
+[chain-worker-affiliation-confirm]
+      ・submitted の chain_affiliation を最大10件取得
+      ・各 tx_hash がブロックに載ったか確認
+      ・載っていたら confirmed、revert していたら failed
+```
+
+### Kudos との違い
+
+| 項目 | Kudos Receipt | Affiliation |
+|------|--------------|-------------|
+| **トリガー** | ゲストが Kudos を送信した瞬間 | マネージャーが所属リクエストを承認した瞬間 |
+| **記録内容** | anchorHash + points | anchorHash + companyHash + staffHash |
+| **用途** | 「この感謝は確かに送られた」の証明 | 「この人はこの会社に所属していた」の証明 |
+| **キャリアへの影響** | Kudos 履歴の信頼性担保 | 職歴そのものの信頼性担保 |
+
+### 検証シナリオ
+
+1. スタッフが転職先に「自分はこのホテルで働いていた」と主張
+2. 転職先が `anchorHash` を使い `getAffiliation()` をコントラクトに問い合わせ
+3. `companyHash` と `staffHash` が一致すれば、ブロックチェーン上で所属が証明される
+4. `affiliatedAt` のタイムスタンプで「いつから所属していたか」も検証可能

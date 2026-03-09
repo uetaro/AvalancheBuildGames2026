@@ -10,6 +10,8 @@ const chainWorker = new Hono();
 const RECEIPT_REGISTRY_ABI = [
   "function recordReceipt(bytes32 anchorHash, uint32 points) external",
   "function isRecorded(bytes32 anchorHash) external view returns (bool)",
+  "function recordAffiliation(bytes32 anchorHash, bytes32 companyHash, bytes32 staffHash) external",
+  "function isAffiliationRecorded(bytes32 anchorHash) external view returns (bool)",
 ];
 
 async function loadEthers() {
@@ -224,6 +226,190 @@ chainWorker.post("/chain-worker-confirm", async (c) => {
   }
 
   return c.json({ processed: receipts.length, confirmed, failed });
+});
+
+// ─── chain-worker-affiliation-submit ──────────────────────────────────────
+// Process queued/failed chain_affiliation rows → recordAffiliation() on Avalanche.
+chainWorker.post("/chain-worker-affiliation-submit", async (c) => {
+  if (!authorizeWorker(c.req.header("Authorization"))) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+
+  const ISSUER_PK = Deno.env.get("ISSUER_PRIVATE_KEY");
+  const FUJI_RPC = Deno.env.get("AVALANCHE_RPC_URL") ?? "https://api.avax-test.network/ext/bc/C/rpc";
+  const DEFAULT_CONTRACT = Deno.env.get("RECEIPT_REGISTRY_ADDRESS") ?? "";
+
+  if (!ISSUER_PK) {
+    return c.json({ error: "ISSUER_PRIVATE_KEY not configured" }, 500);
+  }
+
+  const supabase = createServiceClient();
+  const now = new Date().toISOString();
+
+  const { data: rows, error: fetchErr } = await supabase
+    .from("chain_affiliation")
+    .select("chain_affiliation_id, anchor_hash, company_hash, staff_hash, retry_count, contract_address")
+    .in("receipt_status", ["queued", "failed"])
+    .or(`next_attempt_at.is.null,next_attempt_at.lte.${now}`)
+    .order("created_at", { ascending: true })
+    .limit(5);
+
+  if (fetchErr) {
+    console.log("[chain-worker-aff-submit] DB fetch error:", fetchErr.message);
+    return c.json({ error: fetchErr.message }, 500);
+  }
+  if (!rows?.length) {
+    return c.json({ processed: 0, submitted: 0, failed: 0 });
+  }
+
+  const ethers = await loadEthers();
+  const provider = new ethers.JsonRpcProvider(FUJI_RPC);
+  const wallet = new ethers.Wallet(ISSUER_PK, provider);
+
+  let submitted = 0;
+  let failed = 0;
+
+  for (const row of rows) {
+    const contractAddr = row.contract_address || DEFAULT_CONTRACT;
+
+    if (!contractAddr) {
+      await supabase.from("chain_affiliation").update({
+        receipt_status: "failed",
+        tx_error: "CONTRACT_ADDRESS not configured",
+        last_attempt_at: now,
+        retry_count: (row.retry_count ?? 0) + 1,
+        updated_at: now,
+      }).eq("chain_affiliation_id", row.chain_affiliation_id);
+      failed++;
+      continue;
+    }
+
+    const contract = new ethers.Contract(contractAddr, RECEIPT_REGISTRY_ABI, wallet);
+
+    try {
+      const alreadyRecorded: boolean = await contract.isAffiliationRecorded(row.anchor_hash);
+      if (alreadyRecorded) {
+        await supabase.from("chain_affiliation").update({
+          receipt_status: "confirmed",
+          confirmed_at: now,
+          fail_reason: "already_recorded",
+          last_attempt_at: now,
+          updated_at: now,
+        }).eq("chain_affiliation_id", row.chain_affiliation_id);
+        submitted++;
+        console.log(`[chain-worker-aff-submit] already_recorded: ${row.chain_affiliation_id}`);
+        continue;
+      }
+
+      const tx = await contract.recordAffiliation(
+        row.anchor_hash,
+        row.company_hash,
+        row.staff_hash,
+        { gasLimit: 120_000 },
+      );
+
+      await supabase.from("chain_affiliation").update({
+        receipt_status: "submitted",
+        tx_hash: tx.hash,
+        submitted_at: now,
+        last_attempt_at: now,
+        tx_error: null,
+        updated_at: now,
+      }).eq("chain_affiliation_id", row.chain_affiliation_id);
+
+      submitted++;
+      console.log(`[chain-worker-aff-submit] submitted tx=${tx.hash} for ${row.chain_affiliation_id}`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      const retryCount = (row.retry_count ?? 0) + 1;
+      const nextAttempt = new Date(Date.now() + backoffMs(retryCount)).toISOString();
+
+      await supabase.from("chain_affiliation").update({
+        receipt_status: "failed",
+        retry_count: retryCount,
+        next_attempt_at: nextAttempt,
+        last_attempt_at: now,
+        tx_error: msg.slice(0, 500),
+        updated_at: now,
+      }).eq("chain_affiliation_id", row.chain_affiliation_id);
+
+      failed++;
+      console.log(`[chain-worker-aff-submit] failed ${row.chain_affiliation_id}: ${msg}`);
+    }
+  }
+
+  return c.json({ processed: rows.length, submitted, failed });
+});
+
+// ─── chain-worker-affiliation-confirm ─────────────────────────────────────
+chainWorker.post("/chain-worker-affiliation-confirm", async (c) => {
+  if (!authorizeWorker(c.req.header("Authorization"))) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+
+  const FUJI_RPC = Deno.env.get("AVALANCHE_RPC_URL") ?? "https://api.avax-test.network/ext/bc/C/rpc";
+  const supabase = createServiceClient();
+  const now = new Date().toISOString();
+
+  const { data: rows, error: fetchErr } = await supabase
+    .from("chain_affiliation")
+    .select("chain_affiliation_id, tx_hash, retry_count")
+    .eq("receipt_status", "submitted")
+    .not("tx_hash", "is", null)
+    .is("confirmed_at", null)
+    .limit(10);
+
+  if (fetchErr) {
+    console.log("[chain-worker-aff-confirm] DB fetch error:", fetchErr.message);
+    return c.json({ error: fetchErr.message }, 500);
+  }
+  if (!rows?.length) {
+    return c.json({ processed: 0, confirmed: 0, failed: 0 });
+  }
+
+  const ethers = await loadEthers();
+  const provider = new ethers.JsonRpcProvider(FUJI_RPC);
+
+  let confirmed = 0;
+  let failed = 0;
+
+  for (const row of rows) {
+    try {
+      const txReceipt = await provider.getTransactionReceipt(row.tx_hash);
+
+      if (!txReceipt) continue;
+
+      if (txReceipt.status === 1) {
+        await supabase.from("chain_affiliation").update({
+          receipt_status: "confirmed",
+          confirmed_at: now,
+          updated_at: now,
+        }).eq("chain_affiliation_id", row.chain_affiliation_id);
+
+        confirmed++;
+        console.log(`[chain-worker-aff-confirm] confirmed: ${row.chain_affiliation_id} tx=${row.tx_hash}`);
+      } else {
+        const retryCount = (row.retry_count ?? 0) + 1;
+        const nextAttempt = new Date(Date.now() + backoffMs(retryCount)).toISOString();
+
+        await supabase.from("chain_affiliation").update({
+          receipt_status: "failed",
+          retry_count: retryCount,
+          next_attempt_at: nextAttempt,
+          tx_error: "tx_reverted",
+          updated_at: now,
+        }).eq("chain_affiliation_id", row.chain_affiliation_id);
+
+        failed++;
+        console.log(`[chain-worker-aff-confirm] reverted: ${row.chain_affiliation_id}`);
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.log(`[chain-worker-aff-confirm] error for ${row.chain_affiliation_id}: ${msg}`);
+    }
+  }
+
+  return c.json({ processed: rows.length, confirmed, failed });
 });
 
 export default chainWorker;
