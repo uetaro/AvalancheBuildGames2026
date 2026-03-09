@@ -15,6 +15,7 @@ import ProfileEditForm from "./pages/account/ProfileEditForm";
 import PublicationRangeSetting from "./pages/account/PublicationRangeSetting";
 import SharedURL from "./pages/account/SharedURL";
 import AffiliationApplication from "./pages/account/AffiliationApplication";
+import CareerHistory from "./pages/account/CareerHistory";
 
 const base = import.meta.env.BASE_URL.replace(/\/+$/, '') || undefined;
 
@@ -43,6 +44,7 @@ export const router = createBrowserRouter([
       { path: "account/publication", Component: PublicationRangeSetting },
       { path: "account/shared-url", Component: SharedURL },
       { path: "account/affiliation", Component: AffiliationApplication },
+      { path: "account/career", Component: CareerHistory },
     ],
   },
 ], { basename: base });

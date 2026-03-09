@@ -287,6 +287,34 @@ affiliation.post(`${ROUTE_PREFIX}/ops-affiliation-requests-decide`, async (c) =>
         return c.json({ error_code: "INTERNAL_ERROR", message: `Request update failed: ${reqUpdateErr.message}` }, 500);
       }
 
+      // Queue on-chain affiliation proof (best-effort, same pattern as chain_receipt)
+      if (resultCompanyMemberId) {
+        const encoder = new TextEncoder();
+        const anchorPayload = `affiliation:${resultCompanyMemberId}:${company_id}:${request.user_id}`;
+        const anchorBuf = await crypto.subtle.digest("SHA-256", encoder.encode(anchorPayload));
+        const anchorHash = "0x" + Array.from(new Uint8Array(anchorBuf)).map(b => b.toString(16).padStart(2, "0")).join("");
+
+        const companyBuf = await crypto.subtle.digest("SHA-256", encoder.encode(company_id));
+        const companyHash = "0x" + Array.from(new Uint8Array(companyBuf)).map(b => b.toString(16).padStart(2, "0")).join("");
+
+        const staffBuf = await crypto.subtle.digest("SHA-256", encoder.encode(request.user_id));
+        const staffHash = "0x" + Array.from(new Uint8Array(staffBuf)).map(b => b.toString(16).padStart(2, "0")).join("");
+
+        await svc.from("chain_affiliation").insert({
+          company_member_id: resultCompanyMemberId,
+          company_id,
+          user_id: request.user_id,
+          anchor_hash: anchorHash,
+          company_hash: companyHash,
+          staff_hash: staffHash,
+          receipt_status: "queued",
+          version: 1,
+        }).then(({ error: chainErr }) => {
+          if (chainErr) console.log("[ops-affiliation-decide] chain_affiliation queue error:", chainErr.message);
+          else console.log("[ops-affiliation-decide] Queued on-chain affiliation for member:", resultCompanyMemberId);
+        });
+      }
+
       // Audit log (best-effort)
       await svc.from("audit_log").insert({
         actor_company_member_id: mgr.company_member_id,

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'motion/react';
-import { Bell, Lock, Globe, LogOut, UserCircle, Mail, Briefcase, Calendar, ArrowUpRight, Pencil, Building2 } from 'lucide-react';
+import { Bell, Lock, Globe, LogOut, UserCircle, Mail, Briefcase, Calendar, ArrowUpRight, Pencil, Building2, ShieldCheck } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { supabase, serverUrl, authHeaders } from '../../lib/supabase';
 
@@ -90,11 +90,11 @@ export default function EditProfile() {
 
   const menuItems = [
     { 
-      id: 'work-history', 
-      label: 'Work History', 
-      icon: Calendar, 
+      id: 'career-history', 
+      label: 'Career History & Verification', 
+      icon: ShieldCheck, 
       color: '#5BA5A5',
-      action: () => navigate('/app/work/activity')
+      action: () => navigate('/app/account/career')
     },
     { 
       id: 'privacy', 

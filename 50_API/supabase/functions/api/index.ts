@@ -79,8 +79,10 @@ guestApp.route("/", staffList);  // GET /public-staff-list
 app.route("/api/make-server-14a1e5b0", guestApp);
 
 // ── On-chain Worker routes ─────────────────────────────────────────────────
-// POST /api/chain-worker-submit  — send queued receipts to Avalanche
-// POST /api/chain-worker-confirm — confirm submitted Tx completion
+// POST /api/chain-worker-submit              — send queued Kudos receipts to Avalanche
+// POST /api/chain-worker-confirm             — confirm submitted Kudos Tx
+// POST /api/chain-worker-affiliation-submit  — send queued affiliation proofs to Avalanche
+// POST /api/chain-worker-affiliation-confirm — confirm submitted affiliation Tx
 // Auth: Authorization: Bearer <SUPABASE_SERVICE_ROLE_KEY> (set by pg_cron)
 app.route("/api", chainWorker);
 
