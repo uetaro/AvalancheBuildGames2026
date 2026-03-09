@@ -1,180 +1,307 @@
 # Heartel
 
-Heartel is a career-first hospitality MVP designed to help hotel staff build visible, trusted, and portable career value from the great work they do every day. Guests can send real-time "Kudos" to on-duty staff during their stay, hotels gain operational and talent insights, and key recognition events can be anchored on Avalanche.
+## English
 
-## Career-First Vision
+Heartel is a hospitality MVP that turns a guest's "thank you" into portable `career evidence` for hotel staff.  
+Guests can send Kudos during their stay, staff can turn that recognition into visible career value, operators can manage both hotel operations and talent flows, and key events are anchored on Avalanche Fuji for later verification.
 
-Heartel starts from one belief: the most important asset in hospitality is the growth of hotel staff careers.
+## Quick Review Guide
 
-We are building a system where day-to-day guest appreciation does not disappear as temporary feedback, but becomes:
+For technical review, these are the fastest entry points.
 
-- visible proof of service quality
-- reusable career data for staff growth
-- trusted records that can be verified beyond a single company
+- **Public GitHub repository**: this repository
+- **Live MVP site**: [https://d1zjxii34l6keu.cloudfront.net/](https://d1zjxii34l6keu.cloudfront.net/)
+- **Mobile preview**: [https://d1zjxii34l6keu.cloudfront.net/preview](https://d1zjxii34l6keu.cloudfront.net/preview)
+- **Verified smart contract (Sourcify)**: [ReceiptRegistry on Fuji](https://repo.sourcify.dev/43113/0x4576Ae934Ca08ded60aD94F31b7b4F9545B37a67)
+- **Explorer link (Snowtrace Fuji)**: [0x4576Ae934Ca08ded60aD94F31b7b4F9545B37a67](https://testnet.snowtrace.io/address/0x4576Ae934Ca08ded60aD94F31b7b4F9545B37a67?chainId=43113)
 
-## What It Does
+## Why Heartel
 
-- Guests tap a room card to enter a lightweight guest flow.
-- Guests can browse on-duty staff and send a Kudos message with a category.
-- Staff can view received Kudos, work status, profile, and point-related screens in a mobile app.
-- Hotel operators and managers can manage stays, rooms, cards, affiliation requests, and analytics in a web dashboard.
-- Each Kudos can be anchored on Avalanche through an on-chain receipt flow using `ReceiptRegistry` on Fuji testnet.
+In hospitality, meaningful guest appreciation often disappears as verbal feedback or one-time survey comments. Heartel is designed to change that.
 
-## Why It Matters
+- Turn guest appreciation into immediate and specific Kudos
+- Turn staff performance into visible career data
+- Turn service activity into operational insight for hotels
+- Turn key recognition events into verifiable records on Avalanche
 
-Hospitality staff create meaningful guest experiences every day, but appreciation is often informal, delayed, trapped inside one workplace, or impossible to reuse in a staff member's long-term career story. Heartel is not designed as a negative performance review tool. Instead, it is designed to collect concrete, positive, and memorable guest comments about what was especially great during the stay.
+## What You Can Experience
 
-To preserve that quality, the product is designed to accept only specific and positive Kudos through AI-assisted moderation. Over time, these verified Kudos can complement a staff member's traditional resume or work history by adding real examples of hospitality excellence, guest trust, and service strengths.
+This MVP includes three hands-on surfaces.
 
-Heartel turns guest appreciation into:
+- **Guest Mobile**
+  - Start a lightweight guest flow from the room-card entry concept
+  - Browse on-duty staff and send Kudos
+  - Experience AI moderation before submission
+- **Staff Mobile**
+  - Log in and view work status, Kudos, points, profile, and Career History
+  - Check affiliation history and on-chain verification
+  - Use AI career support
+- **Staff Web / Ops Dashboard**
+  - Manage rooms, cards, and stays
+  - Operate guest check-in / check-out
+  - Review and approve affiliation requests
+  - View analytics
 
-- immediate, specific, and positive feedback for staff
-- reusable career evidence that can complement a traditional resume
-- measurable operational insight for hotels
-- tamper-resistant proof of recognition using Avalanche
+## Live MVP Access
 
-## MVP Scope
+### Web / Mobile URLs
 
-This repository contains a functional prototype with:
+- **Ops dashboard**: [https://d1zjxii34l6keu.cloudfront.net/](https://d1zjxii34l6keu.cloudfront.net/)
+- **2-device mobile preview**: [https://d1zjxii34l6keu.cloudfront.net/preview](https://d1zjxii34l6keu.cloudfront.net/preview)
 
-- `10_UI/guest_mobile` - Guest-facing mobile web app
-- `10_UI/staff_mobile` - Staff-facing mobile web app
-- `10_UI/staff_web` - Staff and manager operations dashboard
-- `50_API/supabase/functions/api` - Unified Supabase Edge Function backend
-- `60_AVALANCHE/src/ReceiptRegistry.sol` - Avalanche receipt registry smart contract
+### How To Read The Preview
 
-## Core User Flows
+- `preview` shows two mobile apps side by side
+- **Left** is `Staff Mobile`
+- **Right** is `Guest Mobile`
 
-### Guest Flow
+### Access Notes
 
-1. Tap room card
-2. Verify active stay and create guest session
-3. View on-duty staff
-4. Send Kudos with category and message
-5. Receive confirmation and remaining quota feedback
+- **Guest Mobile** does not require login
+- **Staff Mobile / Staff Web** use Supabase Auth accounts
+- For local reproduction, `schema.sql` includes an initial operator record with `operator@example.com`
+- The actual login password must be created and managed in Supabase Auth
 
-### Staff Flow
+## Recommended Demo Flow
 
-1. Log in
-2. Check in/out via work tag
-3. View Kudos dashboard and recent recognition
-4. Track points and profile information
-5. Access AI career support
+1. Open `preview` and confirm that the left device is staff and the right device is guest
+2. Start with the right-side `Guest Mobile` and walk through the Kudos submission flow
+3. Check that AI moderation is not just blocking content, but shaping feedback into something specific and positive
+4. Move to the left-side `Staff Mobile` and view received Kudos, points, profile, and Career History
+5. Open `Staff Web` and review room / card / stay management plus guest check-in / check-out
+6. Review the affiliation approval flow and confirm that approved affiliation history becomes visible in `Career History`
+7. Verify the Avalanche side either through the in-app verification links or through the contract / explorer links below
 
-### Hotel Operations Flow
+### User Flow Board
 
-1. Manage active stays
-2. Bind cards to rooms
-3. Check guests in and out
-4. Review and decide affiliation requests
-5. Monitor hotel and member analytics
+For a higher-level operational view, the Figma board below summarizes the major use-case flows across the MVP:
+
+- guest check-in / check-out
+- staff work check-in / check-out
+- Kudos submission
+
+Figma flow board: [Heartel user flow board](https://www.figma.com/board/NsSJBjYQc09JJugpI3n44T/%E7%84%A1%E9%A1%8C?node-id=0-1&t=uLwziHayZxXeW7Oc-1)
+
+## Full User Journeys
+
+### A. Guest Flow
+
+1. The guest enters the guest flow by tapping a room card
+2. The system verifies the active stay linked to that card
+3. A `guest_session` is issued so the guest can continue with a lightweight token
+4. The guest sees staff currently on duty at the hotel they are staying in
+5. The guest selects a staff member and sends Kudos
+6. The guest enters a category and free-text message
+7. AI moderation checks the content
+8. If approved, the system stores Kudos and creates a `chain_receipt` in `queued` status
+9. The UI returns a completion state and remaining quota
+10. A background worker sends the record to Avalanche and verification appears later
+
+### B. Staff Flow
+
+1. Staff log in
+2. Staff check in / out using the NFC work tag flow
+3. Staff review received Kudos
+4. Staff view point balance and history
+5. Staff use AI career support
+6. Staff open the Career History screen to view affiliation history and on-chain verification
+7. Recorded transactions can be opened in an explorer from the UI
+
+### C. Ops / Manager Flow
+
+1. The operator logs into the management dashboard
+2. They manage rooms, cards, and stays
+3. They run guest check-in / check-out operations
+4. They review affiliation requests
+5. On approval, `company_member` is created or updated
+6. At the same time, `chain_affiliation` is queued
+7. A worker executes `recordAffiliation`
+8. Staff can later see proof that they belonged to that company
+
+## What Ops Can Actually Do
+
+This README is intended to make operator actions clear as well.
+
+- **Stay operations**
+  - guest check-in / check-out
+  - room and card binding management
+  - active stay tracking
+- **People operations**
+  - affiliation request review and approval / rejection
+  - company member creation and updates
+  - staff information review
+- **Visibility**
+  - analytics for Kudos and usage activity
+  - visibility into staff activity and recognition
+- **Verification**
+  - status review of on-chain Kudos / affiliation proofs
+
+Heartel is not just a compliment app. It is an MVP that connects **operations, people management, and verifiable proof** in one product.
+
+## Why The Architecture Looks Like This
+
+### Why three separate frontends
+
+- Guest, staff, and operator roles have very different goals, permissions, and interaction density
+- Guests need minimal friction
+- Staff need a mobile-first daily-use experience
+- Operators need a web dashboard optimized for management actions
+
+### Why a unified backend API
+
+- For an MVP, delivery speed and maintainability matter
+- A single unified API with `guest / staff / ops / chain worker` domains is easier to reason about than fragmented functions
+- It centralizes CORS, authentication, logging, and shared client creation
+
+### Why on-chain processing is asynchronous
+
+- Waiting for blockchain submission during Kudos posting would make the UX too heavy
+- So the system saves to the DB first, queues `chain_receipt` / `chain_affiliation`, and lets a worker submit asynchronously
+- This balances **fast UX** with **verifiable proof**
+
+### Why personal data is not written directly on-chain
+
+- Company IDs, user IDs, and message bodies are not stored directly on-chain
+- The system stores proof using `anchor_hash`, `company_hash`, and `staff_hash`
+- On-chain is the **proof layer**, while off-chain is the **operations layer**
+
+## System Architecture
+
+### Main Components
+
+- `10_UI/guest_mobile`
+  - guest session entry from the room-card concept
+  - staff list
+  - Kudos submission
+  - AI moderation
+- `10_UI/staff_mobile`
+  - work status
+  - Kudos dashboard
+  - point balance
+  - Career History
+  - AI career support
+- `10_UI/staff_web`
+  - room management
+  - card management
+  - stay management
+  - affiliation approval
+  - analytics
+- `50_API/supabase/functions/api`
+  - unified API
+  - grouped guest / staff / ops / chain worker routes
+- `60_AVALANCHE/src/ReceiptRegistry.sol`
+  - contract that records Kudos and affiliation proofs
+
+### Representative Data Tables
+
+- `company`, `company_member`, `company_member_request`
+- `room`, `card`, `card_room_binding`, `stay`
+- `guest_session`
+- `kudos`, `kudos_moderation`
+- `chain_receipt`, `chain_affiliation`
+- `audit_log`
+- `point_exchange`
+
+### Data Flow
+
+1. A frontend sends a request to the API
+2. The API checks authentication and authorization
+3. Postgres stores the normalized business data
+4. If the event is eligible, the system creates `chain_receipt` or `chain_affiliation` with `queued` status
+5. `pg_cron` triggers worker routes
+6. The worker uses `ethers` to submit to Avalanche Fuji
+7. The DB is updated with `submitted / confirmed / failed`
+8. The UI visualizes that state and exposes explorer links
 
 ## Avalanche / Web3 Implementation
 
-Heartel uses Avalanche to make recognition verifiable rather than just visible.
+Heartel uses Avalanche to make recognition not only visible, but verifiable.
 
-- Network: Avalanche Fuji Testnet (`43113`)
-- Smart contract: `ReceiptRegistry`
-- Contract role: store receipt anchors for Kudos submissions
-- Worker flow: queued receipts are submitted and confirmed asynchronously
-- Verification model: a `chain_receipt` is created when Kudos is sent, then anchored on-chain by worker routes
+- **Network**: Avalanche Fuji Testnet (`43113`)
+- **Smart Contract**: `ReceiptRegistry`
+- **Current On-Chain Scope**:
+  - Kudos proofs
+  - staff affiliation history proofs
+- **Verification Model**:
+  - queue creation on Kudos / affiliation save
+  - worker submission to Avalanche
+  - UI-level verification using `tx_hash` and `anchor_hash`
 
-### On-Chain Design
+### Verified Contract Links
 
-- `public-kudos-send` creates a Kudos record and computes an `anchor_hash`
-- `chain_receipt` is created with queued status
-- `chain-worker-submit` sends the receipt to Avalanche
-- `chain-worker-confirm` confirms transaction finality
-- `ReceiptRegistry` prevents duplicate receipt recording through idempotent checks
+- **Sourcify**: [ReceiptRegistry verified source](https://repo.sourcify.dev/43113/0x4576Ae934Ca08ded60aD94F31b7b4F9545B37a67)
+- **Snowtrace Fuji**: [Contract explorer page](https://testnet.snowtrace.io/address/0x4576Ae934Ca08ded60aD94F31b7b4F9545B37a67?chainId=43113)
 
-## Technical Architecture
+### Contract Design
+
+- `recordReceipt`
+- `recordAffiliation`
+- `isRecorded`
+- `isAffiliationRecorded`
+- idempotent design to prevent duplicates
+
+### Why This Matters
+
+- Kudos does not end as just another DB log
+- affiliation history is also elevated into a proof target
+- it creates the basis for career evidence that is not trapped inside one hotel
+
+## Technical Stack
 
 ### Frontend
 
-- React-based guest mobile app
-- React-based staff mobile app
-- React-based web admin dashboard
+- `React 18 + TypeScript + Vite`
+- `Tailwind CSS`
+- `Radix UI`
+- `MUI`
+- `lucide-react`
+- `motion`
+- `lottie-react` for the guest AI check experience
 
 ### Backend
 
-- Supabase Edge Functions
-- Unified Hono API router
-- Supabase Auth
-- Supabase Postgres
-- Supabase Storage
+- `Supabase Edge Functions + Deno + Hono`
+- `Supabase Postgres`
+- `Supabase Auth`
+- `Supabase Storage`
+- `pg_cron` + `pg_net`
+- `OpenAI API`
 
-### Smart Contract Layer
+### Blockchain
 
-- Solidity contract for receipt recording
-- Avalanche Fuji testnet deployment target
-
-## Technical Implementation Details
-
-### Backend API Domains
-
-- Ops APIs for check-in, check-out, rooms, cards, members, and analytics
-- Staff APIs for work status, Kudos, profile, affiliation, and career chat
-- Guest APIs for entry verification, staff list, and Kudos sending
-- Chain worker APIs for asynchronous Avalanche submission and confirmation
-
-### Quality / Architecture Decisions
-
-- One unified backend instead of fragmented function entry points
-- Clear separation between guest, staff, ops, and chain worker routes
-- Asynchronous blockchain submission to keep guest UX responsive
-- AI moderation before storing/sending Kudos
-- Optimistic locking where needed for review and profile update flows
+- `Solidity 0.8.20`
+- `OpenZeppelin Ownable`
+- `ethers v6`
+- Avalanche Fuji target with future subnet-oriented expansion in mind
 
 ## Evaluation Criteria Mapping
 
 ### Technical Implementation Quality
 
-- Unified API architecture with role-specific route domains
-- Async queue-based on-chain submission design
-- Authenticated flows for staff/ops and tokenized guest session flow
-- Separate frontend surfaces optimized for each user type
+- separated UIs by role
+- unified API with clear guest / staff / ops / chain worker responsibilities
+- queue + worker model instead of synchronous on-chain blocking
+- duplicate prevention, retry logic, and status transitions
+- hash-based proof model without exposing personal data directly on-chain
 
 ### Use of Avalanche Technologies
 
-- Avalanche Fuji smart contract integration
-- On-chain receipt anchoring for recognition events
-- Explorer-verifiable transaction model through `tx_hash` and `anchor_hash`
+- a Solidity contract deployed for Avalanche Fuji
+- a publicly verifiable contract via Sourcify
+- verifiable UX through `tx_hash` and `anchor_hash`
+- architecture that can evolve toward subnet-like specialization
 
 ### MVP Architecture Design
 
-- Guest mobile + staff mobile + staff web + Supabase backend + Avalanche contract
-- Designed as a practical hospitality MVP with production-oriented boundaries
+- clear boundaries across `guest_mobile + staff_mobile + staff_web + unified backend + async chain worker + Avalanche`
+- designed for practical operations, not just demo-only flows
 
 ### UX Design
 
-- Lightweight guest flow with minimal friction
-- Staff-focused mobile experience for daily usage
-- Web dashboard for operational management and analytics
-
-## Project Documentation
-
-- `00_DOCUMENT/03_DOCUMENT/031_API` - API detailed design documents
-- `00_DOCUMENT/03_DOCUMENT/032_DISPLAY` - Screen specifications
-- `00_DOCUMENT/02_ONCHAIN/flow_and_why.md` - On-chain flow rationale
-
-## Local Development
-
-### UI
-
-Each UI project can be started independently from `10_UI/*`.
-
-### Backend
-
-Use Supabase Edge Functions locally:
-
-```bash
-cd 50_API
-supabase functions serve api --env-file .env.local
-```
-
-### Smart Contract
-
-`ReceiptRegistry.sol` targets Avalanche Fuji for MVP verification.
+- low-friction guest experience from the room-card concept
+- AI moderation that shapes the experience rather than just rejecting content
+- staff-facing self-view through Kudos, points, and Career History
+- operator-facing visibility across hotel operations and people management
 
 ## Repository Structure
 
@@ -183,257 +310,412 @@ supabase functions serve api --env-file .env.local
   guest_mobile/
   staff_mobile/
   staff_web/
+  deploy/
 50_API/
   supabase/functions/api/
 60_AVALANCHE/
   src/ReceiptRegistry.sol
+  hardhat.config.ts
 00_DOCUMENT/
+  02_ONCHAIN/
   03_DOCUMENT/
     031_API/
     032_DISPLAY/
+  04_DATA/
 ```
 
-## Future Architecture Direction
+## Related Docs
 
-We chose Avalanche not only because it is practical for MVP verification on Fuji, but because its architecture matches the long-term product direction of Heartel.
+- `00_DOCUMENT/02_ONCHAIN/flow_and_why.md` - on-chain design intent and judging context
+- `00_DOCUMENT/04_DATA/schema.sql` - schema, seed data, and cron setup
+- `00_DOCUMENT/03_DOCUMENT/031_API` - detailed API design
+- `00_DOCUMENT/03_DOCUMENT/032_DISPLAY` - screen specifications
+- Figma workflow board: [Heartel workflow board](https://www.figma.com/board/NsSJBjYQc09JJugpI3n44T/%E7%84%A1%E9%A1%8C?node-id=0-1&t=uLwziHayZxXeW7Oc-1)
 
-What we want to build over time is not just a single app that stores Kudos in one database, but a trusted career infrastructure for hospitality talent. For that goal, the important idea is the Avalanche `subnet` concept.
+## Current MVP Trade-Offs
 
-In this context, a subnet means a dedicated blockchain environment that can be designed for a specific industry or application domain. Instead of putting every future function into one generic public flow, Heartel could eventually run career-related records in a hospitality-focused network design with its own rules, validation model, and data responsibilities. That matters because staff recognition, affiliation history, and career evidence may need a structure that is shared across organizations while still being domain-specific.
+- end users do not connect wallets directly
+- the issuer wallet is server-side
+- only minimum hash-based proofs are written on-chain
+- asynchronous processing is currently `pg_cron`-based
 
-Avalanche is a strong fit for that direction because:
+These are deliberate choices to balance **something people can use now** with **something they can verify later**.
 
-- it supports an evolution path from MVP testnet verification to more application-specific network design
-- it is suitable for systems that need verifiable records without forcing every product decision into a one-size-fits-all architecture
-- it gives us a clear path to anchor important career events on-chain while keeping product logic flexible off-chain
-- it makes future interoperability between hotels, operators, and career records easier to reason about than a closed single-company database model
+## Future Direction
 
-The future direction we are considering includes:
+Heartel is not intended to remain only a Kudos app.  
+The direction is a **verifiable career infrastructure** for hospitality talent.
 
-- moving from Fuji-based MVP anchoring toward a subnet-oriented architecture for hospitality career records
-- using AWS SQS for more real-time, scalable, and reliable asynchronous on-chain processing than the current cron-style worker approach
-- recording not only Kudos receipts but also company-to-staff affiliation relationships on-chain, so a staff member's career history is not limited to one employer's database
-- adding AI-powered Kudos analysis to extract concrete strengths, growth trends, recurring praise patterns, and career development signals from guest feedback
-- evolving from simple recognition storage into a verifiable career layer for hospitality professionals
+The next directions we are considering include:
 
-Current state: a functional hackathon MVP with core frontend flows, unified backend APIs, and Avalanche-based receipt anchoring as the first implementation step toward that larger career infrastructure.
+- moving from a Fuji MVP toward more production-ready C-Chain / subnet-oriented design
+- replacing `pg_cron` with `AWS SQS` or similar for stronger asynchronous reliability
+- expanding affiliation into stronger long-term career proof
+- using AI for strengths extraction, growth trend analysis, and recommendation drafting
+- building a portable career graph across multiple hotels
+
+## Core Message
+
+The most important value of Heartel is this: **turning guest appreciation into proof staff can carry into their future**.  
+To do that, the UX stays warm, operations stay practical, and proof is backed by Avalanche.
 
 ---
 
-# Heartel
+## 日本語
 
-Heartel は、ホテルスタッフのキャリア形成を最重要テーマに据えたホスピタリティ向け MVP です。滞在中のゲストがその場でスタッフへ「Kudos」を送り、その評価をスタッフの成長につながる可視化された実績、ホテル運営の分析データ、そして Avalanche 上の検証可能な証跡へと変換します。
+Heartel は、ホテルスタッフの日々のすばらしい接客を、その場限りの「ありがとう」で終わらせず、将来に持ち運べる `career evidence` に変えるホスピタリティ向け MVP です。  
+ゲストは滞在中にその場で Kudos を送り、スタッフはその評価を自分の実績として受け取り、運営は現場オペレーションと人材価値の両方を管理できます。重要なイベントは Avalanche Fuji に記録され、後から検証可能です。
 
-## キャリアファーストの考え方
+## Quick Review Guide
 
-Heartel が最初に解決したいのは、ホテルスタッフのキャリアが日々の素晴らしい接客に比べて、十分に記録・可視化・証明されていないことです。
+技術審査でまず見てほしいものを、最初にまとめます。
 
-私たちは、日々のゲストからの感謝を一時的な感想で終わらせず、次の価値に変えていきたいと考えています。
+- **Public GitHub repository**: このリポジトリ
+- **Live MVP site**: [https://d1zjxii34l6keu.cloudfront.net/](https://d1zjxii34l6keu.cloudfront.net/)
+- **Mobile preview**: [https://d1zjxii34l6keu.cloudfront.net/preview](https://d1zjxii34l6keu.cloudfront.net/preview)
+- **Verified smart contract (Sourcify)**: [ReceiptRegistry on Fuji](https://repo.sourcify.dev/43113/0x4576Ae934Ca08ded60aD94F31b7b4F9545B37a67)
+- **Explorer link (Snowtrace Fuji)**: [0x4576Ae934Ca08ded60aD94F31b7b4F9545B37a67](https://testnet.snowtrace.io/address/0x4576Ae934Ca08ded60aD94F31b7b4F9545B37a67?chainId=43113)
 
-- スタッフの実力を示す見える実績
-- キャリア成長に再利用できるデータ
-- 会社をまたいでも信頼できる記録
+## Why Heartel
 
-## できること
+ホテルの現場では、ゲストからの感謝は本来とても価値があるのに、多くが口頭やアンケートで消えてしまいます。Heartel はそこを変えます。
 
-- ゲストがルームカードをタップして簡易フローに入る
-- 出勤中スタッフを一覧表示し、カテゴリ付きの Kudos メッセージを送る
-- スタッフがモバイルアプリで Kudos、勤務状態、プロフィール、ポイント関連情報を確認する
-- ホテル運営者・管理者が Web ダッシュボードで滞在、部屋、カード、所属申請、分析を管理する
-- Kudos の送信事実を `ReceiptRegistry` により Avalanche Fuji 上へ記録できる
+- ゲストの感謝を、即時で具体的な Kudos に変える
+- スタッフの実績を、見えるキャリアデータに変える
+- ホテル運営の改善に使えるデータに変える
+- 重要な承認イベントを、Avalanche 上の検証可能な証跡に変える
 
-## 解決したい課題
+## What You Can Experience
 
-ホテルスタッフへの感謝は、これまで口頭やアンケートに留まりやすく、即時性や検証性がなく、また一つの職場の中だけに閉じがちでした。Heartel は、スタッフをネガティブに評価するための仕組みではなく、「何が特に素晴らしかったのか」を具体的かつポジティブに残すための仕組みとして設計しています。
+この MVP では、以下の 3 つの体験を実際に確認できます。
 
-そのため、AI を用いて、具体性があり前向きな Kudos のみを受け付ける方向で設計しています。こうして蓄積された Kudos は、単なる一時的な称賛ではなく、将来的にはスタッフ本人の従来の経歴書や職務経歴の補足資料として活用されることを想定しています。
+- **Guest Mobile**
+  - ルームカード起点で軽量 guest flow に入る
+  - 出勤中スタッフを見て Kudos を送る
+  - AI モデレーションで内容チェックを受ける
+- **Staff Mobile**
+  - ログインして勤務状態、Kudos、ポイント、プロフィール、Career History を見る
+  - 自分の所属履歴と on-chain verification を確認する
+  - AI career support を使う
+- **Staff Web / Ops Dashboard**
+  - room / card / stay を管理する
+  - guest check-in / check-out を操作する
+  - affiliation request を承認する
+  - analytics を確認する
 
-Heartel はゲストの感謝を次の価値に変えます。
+## Live MVP Access
 
-- スタッフへの即時かつ具体的でポジティブなフィードバック
-- 従来の経歴書に補完的に加えられるキャリア実績
-- ホテル運営に使える定量データ
-- Avalanche による改ざん耐性のある証跡
+### Web / Mobile URLs
 
-## MVP の範囲
+- **運営ダッシュボード**: [https://d1zjxii34l6keu.cloudfront.net/](https://d1zjxii34l6keu.cloudfront.net/)
+- **モバイル 2 台プレビュー**: [https://d1zjxii34l6keu.cloudfront.net/preview](https://d1zjxii34l6keu.cloudfront.net/preview)
 
-このリポジトリには、以下を含む機能プロトタイプが入っています。
+### Preview の見方
 
-- `10_UI/guest_mobile` - ゲスト向けモバイル Web
-- `10_UI/staff_mobile` - スタッフ向けモバイル Web
-- `10_UI/staff_web` - スタッフ / 管理者向け運用ダッシュボード
-- `50_API/supabase/functions/api` - 統合 Supabase Edge Function バックエンド
-- `60_AVALANCHE/src/ReceiptRegistry.sol` - Avalanche 用レシート登録コントラクト
+- `preview` は 2 台のモバイルを横並びで見せるページです
+- **左** が `Staff Mobile`
+- **右** が `Guest Mobile`
 
-## 主要ユーザーフロー
+### Access Notes
 
-### ゲストフロー
+- **Guest Mobile** はログイン不要です
+- **Staff Mobile / Staff Web** は Supabase Auth のアカウントでログインします
+- ローカル再現時は、`schema.sql` に `operator@example.com` の初期オペレーター用レコードがあります
+- ただし、**ログインに必要なパスワード自体は Supabase Auth 側で作成・管理** する必要があります
 
-1. ルームカードをタップ
-2. アクティブ滞在を検証し、ゲストセッションを生成
-3. 出勤中スタッフを表示
-4. カテゴリとメッセージ付きで Kudos を送信
-5. 送信完了と残り送信可能数を確認
+## Recommended Demo Flow
 
-### スタッフフロー
+1. `preview` を開き、左がスタッフ、右がゲストであることを確認する
+2. 右の `Guest Mobile` でゲスト体験を開始し、スタッフ一覧から Kudos 投稿フローを見る
+3. AI moderation によって、単なる自由投稿ではなく、具体的で前向きな内容だけを通す思想を確認する
+4. 左の `Staff Mobile` で、受け取った Kudos、ポイント、プロフィール、Career History を見る
+5. `Staff Web` に入り、room / card / stay の管理や guest check-in / check-out を見る
+6. affiliation request の承認フローを見て、会社所属の証跡が `Career History` に繋がることを確認する
+7. Avalanche 側は、アプリ内の verification 導線、または下記の contract / explorer リンクから確認する
 
-1. ログイン
-2. 勤務タグで出退勤
-3. Kudos ダッシュボードで評価を確認
-4. ポイントやプロフィール情報を確認
-5. AI キャリア支援を利用
+### ユースケースフローボード
 
-### ホテル運営フロー
+MVP 全体の業務フローを俯瞰したい場合は、以下の Figma ボードを参照してください。特に次のフローをまとめています。
 
-1. 滞在を管理
-2. カードと部屋を紐付け
-3. チェックイン / チェックアウトを実施
-4. 所属申請を承認 / 却下
-5. ホテル全体・個人別の分析を確認
+- check-in / check-out
+- 出退勤
+- Kudos 送信
 
-## Avalanche / Web3 実装
+Figma フローボード: [Heartel user flow board](https://www.figma.com/board/NsSJBjYQc09JJugpI3n44T/%E7%84%A1%E9%A1%8C?node-id=0-1&t=uLwziHayZxXeW7Oc-1)
 
-Heartel は、感謝の可視化だけでなく、検証可能性を実現するために Avalanche を利用しています。
+## Full User Journeys
 
-- 対応ネットワーク: Avalanche Fuji Testnet (`43113`)
-- コントラクト: `ReceiptRegistry`
-- 役割: Kudos 送信時のレシートアンカーをオンチェーンに保存
-- ワーカーフロー: キュー化したレシートを非同期に送信・確認
-- 検証モデル: Kudos 送信時に `chain_receipt` を作成し、ワーカー経由でオンチェーンへ記録
+### A. Guest Flow
 
-### オンチェーン設計
+1. ゲストが部屋カードをタップして guest flow に入る
+2. システムがそのカードに紐づくアクティブ滞在を確認する
+3. `guest_session` を発行し、以後は軽量トークンで操作できる
+4. ゲストが宿泊中のホテルに出勤しているスタッフ一覧を見る
+5. スタッフを選んで Kudos を送る
+6. カテゴリと自由記述メッセージを入力する
+7. AI モデレーションが内容をチェックする
+8. 問題なければ Kudos を保存し、同時に `chain_receipt` を `queued` で作る
+9. UI では送信完了と残り quota を返す
+10. 裏側で worker が Avalanche に送信し、後から verification が付く
 
-- `public-kudos-send` で Kudos を作成し、`anchor_hash` を計算
-- `chain_receipt` を queued 状態で登録
-- `chain-worker-submit` が Avalanche へ送信
-- `chain-worker-confirm` がトランザクション確定を確認
-- `ReceiptRegistry` で同一レシートの二重記録を防止
+### B. Staff Flow
 
-## 技術アーキテクチャ
+1. スタッフがログインする
+2. NFC の work tag で出勤・退勤する
+3. 自分に届いた Kudos を確認する
+4. ポイント残高や履歴を見る
+5. AI career support でキャリア相談する
+6. Career History 画面で、自分の所属履歴と on-chain verification を見る
+7. 実際に記録された transaction はブラウザから explorer へ飛べる
 
-### フロントエンド
+### C. Ops / Manager Flow
 
-- React ベースのゲスト向けモバイルアプリ
-- React ベースのスタッフ向けモバイルアプリ
-- React ベースの Web 管理ダッシュボード
+1. 管理画面にログインする
+2. room, card, stay を管理する
+3. guest check-in / check-out を行う
+4. affiliation request を確認する
+5. 承認時に `company_member` が生成・更新される
+6. 同時に `chain_affiliation` が queue 化される
+7. worker が `recordAffiliation` を実行する
+8. スタッフ側で「この会社に所属していた」という証跡が確認可能になる
 
-### バックエンド
+## What Ops Can Actually Do
 
-- Supabase Edge Functions
-- Hono による統合 API ルーター
-- Supabase Auth
-- Supabase Postgres
-- Supabase Storage
+運営側のユースケースが README から伝わるよう、操作対象を明示します。
 
-### スマートコントラクト層
+- **滞在管理**
+  - guest check-in / check-out
+  - room と card の紐付け管理
+  - アクティブ滞在の把握
+- **人材管理**
+  - affiliation request の確認と承認 / 却下
+  - company member の生成・更新
+  - スタッフ情報の閲覧
+- **可視化**
+  - Kudos や利用状況の analytics
+  - スタッフの活動・評価を見える化
+- **検証**
+  - on-chain に送った Kudos / affiliation proof の状態確認
 
-- レシート記録用 Solidity コントラクト
-- Avalanche Fuji へのデプロイを想定
+つまり Heartel は、単なる「褒めるアプリ」ではなく、**現場運営・人材管理・証明基盤を 1 つに束ねた MVP** です。
 
-## 技術実装のポイント
+## Why The Architecture Looks Like This
 
-### バックエンド API の責務分割
+### なぜ 3 つのフロントを分けたか
 
-- Ops API: チェックイン、チェックアウト、部屋、カード、メンバー、分析
-- Staff API: 勤務状態、Kudos、プロフィール、所属申請、キャリアチャット
-- Guest API: 入室検証、スタッフ一覧、Kudos 送信
-- Chain Worker API: Avalanche への非同期送信と確認
+- ゲスト、スタッフ、運営者では求める操作量・導線・権限がまったく違うためです
+- ゲストは friction を極小化したい
+- スタッフは日常利用しやすいモバイル UX が必要
+- 運営は管理操作が多く、Web ダッシュボードが適しています
 
-### 設計上の工夫
+### なぜバックエンドを Unified API にしたか
 
-- 分散していた関数群を 1 本の統合バックエンドへ整理
-- guest / staff / ops / chain worker ごとの明確な責務分離
-- ゲスト UX を阻害しない非同期ブロックチェーン送信
-- Kudos 保存前の AI モデレーション
-- 審査や更新系フローでの楽観ロック採用
+- MVP では開発速度と保守性を優先しました
+- Supabase Function を細かく散らすより、1 本の Unified API の中で `guest / staff / ops / chain worker` を分ける方が分かりやすく、共通処理もまとめやすいです
+- CORS、認証、ログ、共通クライアント生成を統一できます
 
-## Evaluation Criteria への対応
+### なぜオンチェーン処理を同期にしないか
 
-### Technical implementation quality
+- ゲストが Kudos を送るたびにチェーン確定を待つと UX が重くなります
+- そこで、まず DB に保存し、次に `chain_receipt` / `chain_affiliation` に queue を積み、worker が非同期で Avalanche に送る方式にしています
+- これは **投稿体験の軽さ** と **検証可能性** の両立のためです
 
-- ロール別に整理された統合 API アーキテクチャ
-- キューを用いた非同期オンチェーン送信
-- スタッフ / 管理者認証とゲストセッションの分離
-- 利用者ごとに最適化した 3 つのフロントエンド
+### なぜ個人情報をそのままチェーンに載せないか
 
-### Use of Avalanche technologies
+- 会社 ID、ユーザー ID、本文そのものは載せません
+- `anchor_hash`、`company_hash`、`staff_hash` のような hash ベースの証跡にしています
+- オンチェーンは **証明レイヤー**、オフチェーンは **運用レイヤー** という分担です
 
-- Avalanche Fuji 上のスマートコントラクト連携
-- Kudos イベントのオンチェーンアンカー化
-- `tx_hash` と `anchor_hash` による検証可能モデル
+## System Architecture
 
-### MVP architecture design
+### Main Components
 
-- guest mobile + staff mobile + staff web + Supabase backend + Avalanche contract の構成
-- 実運用を見据えた責務分離と導線設計
+- `10_UI/guest_mobile`
+  - ルームカード起点の guest session
+  - スタッフ一覧
+  - Kudos 投稿
+  - AI moderation
+- `10_UI/staff_mobile`
+  - 出退勤
+  - Kudos ダッシュボード
+  - ポイント残高
+  - Career History
+  - AI career support
+- `10_UI/staff_web`
+  - room 管理
+  - card 管理
+  - stay 管理
+  - affiliation 承認
+  - analytics
+- `50_API/supabase/functions/api`
+  - Unified API
+  - guest / staff / ops / chain worker の各ルートを束ねる
+- `60_AVALANCHE/src/ReceiptRegistry.sol`
+  - Kudos と Affiliation の証跡を記録するコントラクト
 
-### UX design
+### Representative Data Tables
 
-- ゲスト向けはカードタップ起点の低摩擦フロー
-- スタッフ向けは日常業務に寄せたモバイル体験
-- 運営者向けは管理・分析に特化した Web 画面
+- `company`, `company_member`, `company_member_request`
+- `room`, `card`, `card_room_binding`, `stay`
+- `guest_session`
+- `kudos`, `kudos_moderation`
+- `chain_receipt`, `chain_affiliation`
+- `audit_log`
+- `point_exchange`
 
-## 関連ドキュメント
+### Data Flow
 
-- `00_DOCUMENT/03_DOCUMENT/031_API` - API 詳細設計書
-- `00_DOCUMENT/03_DOCUMENT/032_DISPLAY` - 画面仕様書
-- `00_DOCUMENT/02_ONCHAIN/flow_and_why.md` - オンチェーン設計の意図
+1. フロントエンドから API にリクエストが入る
+2. API が認証 / 権限を確認する
+3. Postgres に正規データを保存する
+4. 対象イベントであれば `chain_receipt` または `chain_affiliation` を `queued` で作成する
+5. `pg_cron` が worker route を定期実行する
+6. worker が `ethers` を使って Avalanche Fuji に送信する
+7. `submitted / confirmed / failed` を DB に反映する
+8. UI がその状態を可視化し、explorer への導線を出す
 
-## ローカル開発
+## Avalanche / Web3 Implementation
 
-### UI
+Heartel は、感謝を「見える」だけでなく **検証できる** ものにするために Avalanche を使っています。
 
-各 UI は `10_UI/*` 配下で個別に起動できます。
+- **Network**: Avalanche Fuji Testnet (`43113`)
+- **Smart Contract**: `ReceiptRegistry`
+- **Current On-Chain Scope**:
+  - Kudos の証跡
+  - スタッフ所属履歴（Affiliation）の証跡
+- **Verification Model**:
+  - Kudos / affiliation の保存時に queue を作成
+  - worker が Avalanche に送信
+  - `tx_hash` と `anchor_hash` を UI から追える
 
-### バックエンド
+### Verified Contract Links
 
-Supabase Edge Functions をローカル実行します。
+- **Sourcify**: [ReceiptRegistry verified source](https://repo.sourcify.dev/43113/0x4576Ae934Ca08ded60aD94F31b7b4F9545B37a67)
+- **Snowtrace Fuji**: [Contract explorer page](https://testnet.snowtrace.io/address/0x4576Ae934Ca08ded60aD94F31b7b4F9545B37a67?chainId=43113)
 
-```bash
-cd 50_API
-supabase functions serve api --env-file .env.local
-```
+### Contract Design
 
-### スマートコントラクト
+- `recordReceipt`
+- `recordAffiliation`
+- `isRecorded`
+- `isAffiliationRecorded`
+- duplicate を防ぐ idempotent 設計
 
-`ReceiptRegistry.sol` は MVP 検証用として Avalanche Fuji をターゲットにしています。
+### Why This Matters
 
-## リポジトリ構成
+- Kudos を単なる DB ログで終わらせない
+- 会社所属の履歴も証明対象に広げる
+- ホテルの中だけに閉じない career evidence の土台を作る
+
+## Technical Stack
+
+### Frontend
+
+- `React 18 + TypeScript + Vite`
+- `Tailwind CSS`
+- `Radix UI`
+- `MUI`
+- `lucide-react`
+- `motion`
+- `lottie-react` for guest AI check experience
+
+### Backend
+
+- `Supabase Edge Functions + Deno + Hono`
+- `Supabase Postgres`
+- `Supabase Auth`
+- `Supabase Storage`
+- `pg_cron` + `pg_net`
+- `OpenAI API`
+
+### Blockchain
+
+- `Solidity 0.8.20`
+- `OpenZeppelin Ownable`
+- `ethers v6`
+- Avalanche Fuji target, with future subnet-oriented expansion in mind
+
+## Evaluation Criteria Mapping
+
+### Technical Implementation Quality
+
+- 役割別に UI を分離している
+- API は統合しつつ、guest / staff / ops / chain worker に責務分離している
+- on-chain を同期化せず、queue + worker で扱っている
+- duplicate 防止、retry、状態遷移の設計がある
+- 個人情報を直接チェーンに載せず、hash ベースにしている
+
+### Use of Avalanche Technologies
+
+- Avalanche Fuji 上で動作する Solidity コントラクトを実装している
+- Sourcify で検証済みコントラクトを公開している
+- `tx_hash` と `anchor_hash` による verifiable UX を作っている
+- 将来的な subnet 的拡張とも相性が良い設計にしている
+
+### MVP Architecture Design
+
+- `guest_mobile + staff_mobile + staff_web + unified backend + async chain worker + Avalanche` という境界が明確です
+- 実運用を意識し、業務導線と証跡導線を分離しすぎず接続しています
+
+### UX Design
+
+- ゲストは room card 起点で friction が低い
+- AI moderation が rejection だけでなく、柔らかい体験を作る
+- スタッフは Kudos、ポイント、Career History を自分軸で見られる
+- 運営は現場管理と人材管理を同じ文脈で扱える
+
+## Repository Structure
 
 ```text
 10_UI/
   guest_mobile/
   staff_mobile/
   staff_web/
+  deploy/
 50_API/
   supabase/functions/api/
 60_AVALANCHE/
   src/ReceiptRegistry.sol
+  hardhat.config.ts
 00_DOCUMENT/
+  02_ONCHAIN/
   03_DOCUMENT/
     031_API/
     032_DISPLAY/
+  04_DATA/
 ```
 
-## 今後のアーキテクチャ構想
+## Related Docs
 
-Heartel が Avalanche を採用している理由は、単に Fuji 上で MVP を動かしやすいからではありません。Heartel の将来像が、単なるアプリではなく、ホテルスタッフのキャリアを支える「信頼できる記録基盤」にあるためです。その方向性と Avalanche の設計思想が合っていると考えています。
+- `00_DOCUMENT/02_ONCHAIN/flow_and_why.md` - オンチェーン設計の意図と評価観点
+- `00_DOCUMENT/04_DATA/schema.sql` - スキーマ、初期データ、cron 設定
+- `00_DOCUMENT/03_DOCUMENT/031_API` - API 詳細設計
+- `00_DOCUMENT/03_DOCUMENT/032_DISPLAY` - 画面仕様
+- Figma workflow board: [Heartel workflow board](https://www.figma.com/board/NsSJBjYQc09JJugpI3n44T/%E7%84%A1%E9%A1%8C?node-id=0-1&t=uLwziHayZxXeW7Oc-1)
 
-ここで重要になるのが `subnet` という考え方です。subnet とは、特定の業界や用途に合わせて設計できる専用のブロックチェーン環境の考え方です。Heartel の場合、将来的にはホスピタリティ業界に特化した形で、Kudos、所属履歴、実績証明のようなキャリア関連データを扱うためのネットワーク設計へ発展させることを想定しています。つまり、汎用的な 1 本の公開チェーンの使い方だけではなく、「ホテルスタッフのキャリア記録」という用途に合ったルールや責務を持つ基盤へ拡張できる余地があることが重要です。
+## Current MVP Trade-Offs
 
-Avalanche を使う理由は主に以下です。
+- エンドユーザーに wallet 接続は要求していません
+- issuer wallet はサーバー側で保持しています
+- on-chain には最小限の hash ベース証跡だけを載せています
+- 非同期処理は現時点では `pg_cron` ベースです
 
-- MVP 段階では Fuji で検証しつつ、将来はより用途特化のネットワーク設計へ発展できること
-- 重要なキャリアイベントだけをオンチェーンで検証可能にし、その他のプロダクトロジックは柔軟にオフチェーンで構成できること
-- 一社の閉じた DB に閉じず、ホテル・運営会社・スタッフをまたいだ実績証明のあり方を考えやすいこと
-- 「感謝の記録」を将来的に「キャリアの証明」へ育てていくための拡張性があること
+これは「いま現場で触れること」と「将来の検証可能性」を両立するための割り切りです。
 
-今後検討している構成は以下です。
+## Future Direction
 
-- Fuji 上の MVP 検証から発展し、Avalanche の subnet 概念を活かしたホスピタリティ向けキャリア記録基盤へ移行する
-- 現在の cron ベースの非同期処理に加え、AWS SQS を使うことで、よりリアルタイムかつスケーラブルで信頼性の高いオンチェーン処理へ移行する
-- Kudos の受領証だけでなく、会社とスタッフの所属関係そのものもオンチェーンに記録し、キャリア履歴を一社の DB に閉じない形にする
-- AI による Kudos 分析を導入し、ゲストコメントからスタッフの強み、成長傾向、繰り返し評価される特徴、キャリア開発の示唆を抽出できるようにする
-- 単なる感謝データの保存ではなく、ホテルスタッフのための検証可能なキャリアレイヤーへ進化させる
+Heartel は、単なる Kudos アプリで終わるつもりはありません。  
+目指しているのは、ホスピタリティ人材のための **verifiable career infrastructure** です。
 
-現時点では、その第一歩として、主要フロントエンド導線、統合バックエンド API、Avalanche を用いたレシートアンカー基盤を備えたハッカソン向け機能プロトタイプを実装しています。
+今後の方向性として考えているのは次の通りです。
+
+- Fuji MVP から、より本番運用に近い C-Chain / subnet 的設計へ進む
+- `pg_cron` から `AWS SQS` などへ移行し、より信頼性の高い非同期処理にする
+- Kudos だけでなく affiliation をさらに強い career proof に育てる
+- AI による強み抽出、成長傾向分析、推薦文生成へ広げる
+- 複数ホテル横断で持ち運べる career graph を構築する
+
+## Core Message
+
+Heartel の一番大事な価値は、**ゲストの感謝を、スタッフの将来に持ち運べる証拠に変えること** です。  
+そのために、UX は柔らかく、運用は現実的に、証明は Avalanche で担保する。このバランスが Heartel の設計の中心です。
