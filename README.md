@@ -9,6 +9,8 @@ Guests can send Kudos during their stay, staff can turn that recognition into vi
 
 For technical review, these are the fastest entry points.
 
+If you want the exact hands-on walkthrough, see `Recommended Demo Flow` below. It explains step by step how to operate the ops screen, guest flow, and staff mobile flow in the intended review order.
+
 - **Public GitHub repository**: this repository
 - **Live MVP site**: [https://d1zjxii34l6keu.cloudfront.net/](https://d1zjxii34l6keu.cloudfront.net/)
 - **Mobile preview**: [https://d1zjxii34l6keu.cloudfront.net/preview](https://d1zjxii34l6keu.cloudfront.net/preview)
@@ -64,13 +66,33 @@ This MVP includes three hands-on surfaces.
 
 ## Recommended Demo Flow
 
-1. Open `preview` and confirm that the left device is staff and the right device is guest
-2. Start with the right-side `Guest Mobile` and walk through the Kudos submission flow
-3. Check that AI moderation is not just blocking content, but shaping feedback into something specific and positive
-4. Move to the left-side `Staff Mobile` and view received Kudos, points, profile, and Career History
-5. Open `Staff Web` and review room / card / stay management plus guest check-in / check-out
-6. Review the affiliation approval flow and confirm that approved affiliation history becomes visible in `Career History`
-7. Verify the Avalanche side either through the in-app verification links or through the contract / explorer links below
+This is the easiest end-to-end review path for judges and operators.
+
+1. Open `preview` and confirm that the **left side is Staff Mobile** and the **right side is Guest Mobile**
+2. In **Staff Web / Ops Dashboard**, start with check-in:
+   - drag the card for room `401` onto the `401` room slot
+   - this binds the card to room `401`
+   - in the actual product, the guest would then tap the NFC card with a phone to verify and enter the guest flow
+   - for this review, since the physical card cannot be handed over, simply press the yellow **Continue as Guest** button
+3. In **Guest Mobile**, press **Send Kudos**
+   - the screen will show staff currently on duty
+   - for this demo, choose **Avax**
+   - select a category and enter a message
+   - the moderation model is intentionally strict: only concrete and positive messages are accepted with a score-based check
+   - if you try vague or negative text, it may be rejected, which is also part of the intended demo
+4. After the message passes moderation, move to **Staff Mobile**
+   - log in as `avax@testuser.com`
+   - password: `Password`
+   - open the **Kudos** tab from the bottom navigation
+   - confirm that the Kudos you just sent is visible there
+5. Open the Kudos detail on **Staff Mobile**
+   - you can confirm that the record is linked to on-chain verification
+   - the top-right area shows the current status
+   - that status does **not** become final until the guest checks out
+6. Go back to **Staff Web / Ops Dashboard**
+   - check out room `401` using the **Check-out** button
+   - after check-out, the status changes and the Kudos is treated as finalized correctly
+7. If needed, continue from the UI to the explorer links and verify the Avalanche-side proof
 
 ### User Flow Board
 
@@ -370,6 +392,8 @@ Heartel は、ホテルスタッフの日々のすばらしい接客を、その
 
 技術審査でまず見てほしいものを、最初にまとめます。
 
+実際の操作手順をそのまま追いたい場合は、この下の `Recommended Demo Flow` を見てください。運営画面、ゲスト側、スタッフ側をどの順にどう触るかを、審査向けの流れで具体的に書いています。
+
 - **Public GitHub repository**: このリポジトリ
 - **Live MVP site**: [https://d1zjxii34l6keu.cloudfront.net/](https://d1zjxii34l6keu.cloudfront.net/)
 - **Mobile preview**: [https://d1zjxii34l6keu.cloudfront.net/preview](https://d1zjxii34l6keu.cloudfront.net/preview)
@@ -425,13 +449,32 @@ Heartel は、ホテルスタッフの日々のすばらしい接客を、その
 
 ## Recommended Demo Flow
 
-1. `preview` を開き、左がスタッフ、右がゲストであることを確認する
-2. 右の `Guest Mobile` でゲスト体験を開始し、スタッフ一覧から Kudos 投稿フローを見る
-3. AI moderation によって、単なる自由投稿ではなく、具体的で前向きな内容だけを通す思想を確認する
-4. 左の `Staff Mobile` で、受け取った Kudos、ポイント、プロフィール、Career History を見る
-5. `Staff Web` に入り、room / card / stay の管理や guest check-in / check-out を見る
-6. affiliation request の承認フローを見て、会社所属の証跡が `Career History` に繋がることを確認する
-7. Avalanche 側は、アプリ内の verification 導線、または下記の contract / explorer リンクから確認する
+実際に触るときは、次の順番がいちばん分かりやすいです。
+
+1. `preview` を開き、**左が Staff Mobile**、**右が Guest Mobile** であることを確認します
+2. まず **Staff Web / 運営画面** でチェックインを行います
+   - `401` 号室のカードを `401` 号室の枠にドラッグ&ドロップしてください
+   - これでそのカードが `401` 号室に紐づきます
+   - 本来は、その後ゲストが NFC カードをスマホにかざすことで検証され、ゲストフローに入れます
+   - 今回は実物カードを渡せないため、そのまま黄色い **Continue as Guest** を押してください
+3. 次に **Guest Mobile** で **Send Kudos** を押してください
+   - 現在勤務中のスタッフが表示されます
+   - 今回は **Avax** を選択してください
+   - カテゴリーを選び、メッセージを入力してください
+   - ここでは「具体的でポジティブなメッセージ」のみをスコアで判定して通す設計にしています
+   - 適当な文言やネガティブな文言は弾かれることがあるので、その挙動も確認してみてください
+4. 正常に通ったら **Staff Mobile** に移動してください
+   - `avax@testuser.com` でログインします
+   - パスワードは `Password` です
+   - 下部ナビゲーションから **Kudos** を開いてください
+   - 先ほど送った Kudos が表示されていることを確認してください
+   - オンチェーン記録はキューで非同期処理しているため、反映やステータス更新に少し時間がかかる場合があります
+5. その Kudos の詳細を開くと、**オンチェーン上に記録されていること** や **検証導線** を確認できます
+   - 右上には現在のステータスが表示されます
+   - このステータスは、ユーザーがチェックアウトするまで **確定** にはなりません
+6. 最後に **Staff Web / 運営画面** に戻り、最初にチェックインした `401` 号室を **Check-out** ボタンでチェックアウトしてください
+   - これによりステータスが変更され、Kudos も正常に **確定** になります
+7. 必要に応じて、そのまま UI 上の verification 導線から Avalanche 側の記録も確認できます
 
 ### ユースケースフローボード
 
